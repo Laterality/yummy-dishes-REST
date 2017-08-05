@@ -18,6 +18,14 @@
 		],
 		"no-console": [
 			false
+		],
+		"no-string-literal": false,
+		"one-line": [
+			false
+		],
+		"no-trailing-whitespace": false,
+		"align": [
+			false
 		]
 	},
 	"rulesDirectory": []

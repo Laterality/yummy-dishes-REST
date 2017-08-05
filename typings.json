@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bcrypt-nodejs": "registry:dt/bcrypt-nodejs#0.0.0+20160428043022",
+    "express": "registry:npm/express#4.14.0+20170217205433",
+    "morgan": "registry:dt/morgan#1.7.0+20160726064905",
+    "multer": "registry:dt/multer#0.0.0+20170119150739"
+  }
+}

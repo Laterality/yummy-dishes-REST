@@ -1,29 +1,42 @@
 import * as mongoose from "mongoose";
 
-export const ImageModel = mongoose.model("Image", new mongoose.Schema({
-	path: String,
-}));
-
 export const NoticeModel = mongoose.model("Notice", new mongoose.Schema({
 	title: String,
 	category: String,
 	content: String,
 }));
 
+export const ImageModel = mongoose.model("Image", new mongoose.Schema({
+	path: String,
+}));
+
 export const CategoryModel = mongoose.model("Category", new mongoose.Schema({
 	name: String,
-	products: [mongoose.Types.ObjectId],
+	products: [mongoose.Schema.Types.ObjectId],
 }));
 
 export const ProductModel = mongoose.model("Product", new mongoose.Schema({
-	name: String,
+	name: {
+		type: String,
+		required: true,
+	},
+	price: {
+		type: Number,
+		required: true,
+	},
 	ingredients: [String],
-	category: mongoose.Types.ObjectId,
+	category: {
+		type: mongoose.Schema.Types.ObjectId,
+		required: true,
+	},
 	date_reg: {
 		type: Number,
 		default: Date.now,
 	},
-	cnt_likes: Number,
+	cnt_likes: {
+		type: Number,
+		default: 0,
+	},
 	image: String,
 }));
 
@@ -32,7 +45,7 @@ export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	prods_today: [mongoose.Types.ObjectId],
+	prods_today: [mongoose.Schema.Types.ObjectId],
 	timesale: {
 		started: {
 			type: Boolean,
@@ -42,13 +55,13 @@ export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
 			type: Number,
 			default: 0,
 		},
-		prods: [mongoose.Types.ObjectId],
+		prods: [mongoose.Schema.Types.ObjectId],
 	},
 }));
 
 export const Comment = mongoose.model("Comment", new mongoose.Schema({
-	author: mongoose.Types.ObjectId,
-	product: mongoose.Types.ObjectId,
+	author: mongoose.Schema.Types.ObjectId,
+	product: mongoose.Schema.Types.ObjectId,
 	date_reg: {
 		type: Date,
 		default: Date.now,
@@ -58,10 +71,10 @@ export const Comment = mongoose.model("Comment", new mongoose.Schema({
 		min: 0,
 		max: 5,
 	},
-	taste: [mongoose.Types.ObjectId],
+	taste: [mongoose.Schema.Types.ObjectId],
 	content: {
 		text: String,
-		images: [mongoose.Types.ObjectId],
+		images: [String],
 	},
 }));
 
@@ -74,8 +87,8 @@ export const OrderModel = mongoose.model("Order", new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	orderer: mongoose.Types.ObjectId,
-	products: mongoose.Types.ObjectId,
+	orderer: mongoose.Schema.Types.ObjectId,
+	products: mongoose.Schema.Types.ObjectId,
 	state: {
 		type: String,
 		enum: ["pending", "processing", "receiving", "received", "rejected"],
@@ -102,20 +115,43 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		trim: true,
 		lowercase: true,
 		unique: true,
+		required: true,
 	},
-	password: String,
-	salt: String,
+	username: {
+		type: String,
+		trim: true,
+		unique: true,
+		required: true,
+	},
+	password: {
+		type: String,
+		required: true,
+	},
+	salt: {
+		type: String,
+		required: true,
+	},
 	login_type: {
 		type: String,
 		lowercase: true,
-		enum: ["none", "google"],
+		enum: ["native", "google"],
+		required: true,
 	},
-	phone_number: String,
+	phone_number: {
+		type: String,
+		required: true,
+	},
 	date_reg: {
 		type: Date,
 		defaulat: Date.now,
 	},
-	age: Number,
+	age: {
+		type: Number,
+		required: true,
+	},
+	device_id: {
+		type: String,
+	},
 	accept_push: {
 		accepted: Boolean,
 		date_accepted: Date,
@@ -124,16 +160,16 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		accepted: Boolean,
 		date_accepted: Date,
 	},
-	bucket: [mongoose.Types.ObjectId],
-	tastes: [mongoose.Types.ObjectId],
-	likes: [mongoose.Types.ObjectId],
-	comments: [mongoose.Types.ObjectId],
-	coupons: [mongoose.Types.ObjectId],
+	bucket: [mongoose.Schema.Types.ObjectId],
+	tastes: [mongoose.Schema.Types.ObjectId],
+	likes: [mongoose.Schema.Types.ObjectId],
+	comments: [mongoose.Schema.Types.ObjectId],
+	coupons: [mongoose.Schema.Types.ObjectId],
 	cnt_reviewable: {
 		type: Number,
 		default: 0,
 	},
-	cnt_stamps: {
+	cnt_stamp: {
 		type: Number,
 		default: 0,
 	},
