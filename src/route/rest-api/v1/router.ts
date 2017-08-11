@@ -6,7 +6,7 @@ import { router as imageApi } from "./image";
 export const router = express.Router();
 
 router.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-	console.log("path: " + req.path, "routing...");
+	// console.log("path: " + req.path, "routing...");
 	next();
 })
 .use("/user", userApi)

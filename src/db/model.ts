@@ -33,11 +33,15 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		type: Number,
 		default: Date.now,
 	},
-	cnt_likes: {
+	cnt_like: {
 		type: Number,
 		default: 0,
 	},
-	image: String,
+	rate_avg: {
+		type: Number,
+		default: 0,
+	},
+	image: mongoose.Schema.Types.ObjectId,
 }));
 
 export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
@@ -71,10 +75,10 @@ export const Comment = mongoose.model("Comment", new mongoose.Schema({
 		min: 0,
 		max: 5,
 	},
-	taste: [mongoose.Schema.Types.ObjectId],
+	tastes: [mongoose.Schema.Types.ObjectId],
 	content: {
 		text: String,
-		images: [String],
+		images: [mongoose.Schema.Types.ObjectId],
 	},
 }));
 
@@ -153,12 +157,24 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		type: String,
 	},
 	accept_push: {
-		accepted: Boolean,
-		date_accepted: Date,
+		accepted: {
+			type: Boolean,
+			default: true,
+		},
+		date_accepted: {
+			type: Date,
+			default: Date.now,
+		},
 	},
 	accept_privacy: {
-		accepted: Boolean,
-		date_accepted: Date,
+		accepted: {
+			type: Boolean,
+			default: true,
+		},
+		date_accepted: {
+			type: Date,
+			default: Date.now,
+		},
 	},
 	bucket: [mongoose.Schema.Types.ObjectId],
 	tastes: [mongoose.Schema.Types.ObjectId],

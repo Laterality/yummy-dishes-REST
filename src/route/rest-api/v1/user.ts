@@ -1,9 +1,9 @@
+import * as bcrypt from "bcrypt-nodejs";
 import * as express from "express";
 import * as mongoose from "mongoose";
-import * as bcrypt from "bcrypt-nodejs";
 
-import * as util from "../../../util";
 import * as model from "../../../db/model";
+import * as util from "../../../util";
 
 export const router = express.Router();
 
@@ -24,6 +24,7 @@ router
  * @body login_type string required, login type ["native", "google"]
  * @body phone_number string required, phone number without hyphens
  * @body age number required, ages of user
+ * @body device_id string required, device id for push message
  * 
  * Response
  * @code 200 request succeed
@@ -42,6 +43,7 @@ router
 	const loginType = (req as any).body["login_type"];
 	const phoneNumber = (req as any).body["phone_number"];
 	const age = (req as any).body["age"];
+	const deviceId = (req as any).body["device_id"];
 
 	console.log("[api] register user", (req as any).body);
 
@@ -51,7 +53,8 @@ router
 		typeof username === "string" &&
 		typeof loginType === "string" &&
 		typeof phoneNumber === "string" &&
-		typeof age === "number") {
+		typeof age === "number" &&
+		typeof deviceId === "string") {
 		
 		const regexNumber = new RegExp("[0-9]");
 		if (!regexNumber.test(phoneNumber)){
@@ -90,6 +93,7 @@ router
 		login_type: loginType,
 		phone_number: phoneNumber,
 		age,
+		device_id: deviceId,
 		});
 		
 		try{
@@ -121,7 +125,8 @@ router
 		typeof username: ${typeof username},\n
 		typeof login_type: ${typeof loginType},\n
 		typeof phone_number: ${typeof phoneNumber},\n
-		typeof age: ${typeof age}}`);
+		typeof age: ${typeof age}}
+		typeof device_id: ${typeof deviceId}`);
 		return util.responseWithJson(res, 403, {
 			result: "fail",
 			error: "unfulfilled parameters",
@@ -220,6 +225,7 @@ router
 		});
 	}
 })
+
 /**
  * User retrieval API
  * 
@@ -227,7 +233,11 @@ router
  * Method: GET
  * 
  * Request
- * @param id string "_id" field of user
+ * @param id string required "_id" field of user
+ * @query q string optional keys to query separte by comma "email", "username" is default
+ * ["login_type", "phone_number", "date_reg", "age",
+ * "accept_push", "accept_privacy", "bucket", "tastes", "likes", "comments", 
+ * "coupons", "cnt_reviewable", "cnt_stamp"]
  * 
  * Response
  * @code 200 request succeed
@@ -242,10 +252,17 @@ router
 .get("/:id", async (req: express.Request, res: express.Response) => {
 	const id = (req as any).params["id"];
 	// console.log("[api] retrieve user, _id: " + id);
-	const query = model.UserModel.findById(id)
-	.populate("likes")
-	.populate("comments")
-	.populate("coupons");
+
+	const queries = ((req as any).query["q"] as string).split(",");
+	
+	let query = model.UserModel.findById(id);
+	query = queries.indexOf("likes") > -1 ? query : query.populate("likes", "name rate_avg cnt_like");
+	query = queries.indexOf("comments") > -1 ? query : query.populate("comments", "content rate")
+	.populate("comments product", "name")
+	.populate("comments tastes", "text");
+	query = queries.indexOf("coupons") > -1 ? query : query.populate("coupons");
+	query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket");
+	query = queries.indexOf("tastes") > -1 ? query : query.populate("tastes");
 
 	try{
 		const result = await query.exec();
@@ -253,18 +270,60 @@ router
 			// if user found
 			console.log("[mongodb] user retrieved, _id: " + id);
 			const user = result as any;
+
+			// default result
+			const queryResult: any = {
+				_id: user["user"],
+				email: user["email"],
+				username: user["username"],
+			};
+
+			// optional results
+			if (queries.indexOf("login_type") > -1) {
+				queryResult["login_type"] = user["login_type"];
+			}
+			if (queries.indexOf("phone_number") > -1) {
+				queryResult["phone_number"] = user["phone_number"];
+			}
+			if (queries.indexOf("date_reg") > -1 ) {
+				queryResult["date_reg"] = user["date_reg"];
+			}
+			if (queries.indexOf("age") > -1) {
+				queryResult["age"] = user["age"];
+			}
+			if (queries.indexOf("accept_push") > -1) {
+				queryResult["accept_push"] = user["accept_push"];
+			}
+			if (queries.indexOf("accept_privacy") > -1) {
+				queryResult["accept_privacy"] = user["accept_privacy"];
+			}
+			if (queries.indexOf("cnt_reviewable") > - 1) {
+				queryResult["cnt_reviewable"] = user["cnt_reviewable"];
+			}
+			if (queries.indexOf("cnt_stamp") > - 1) {
+				queryResult["cnt_stamp"] = user["cnt_stamp"];
+			}
+
+			// populated things
+			if (queries.indexOf("likes") > -1) {
+				queryResult["likes"] = user["likes"];
+			}
+			if (queries.indexOf("comments") > -1) {
+				queryResult["comments"] = user["comments"];
+			}
+			if (queries.indexOf("coupons") > -1) {
+				queryResult["coupons"] = user["couponse"];
+			}
+			if (queries.indexOf("bucket") > -1) {
+				queryResult["bucket"] = user["bucket"];
+			}
+			if (queries.indexOf("tastes") > -1) {
+				queryResult["tastes"] = user["tastes"];
+			}
+
 			return util.responseWithJson(res, 200, {
 				result: "ok",
-				user: {
-					_id: user["_id"],
-					email: user["eamil"],
-					username: user["username"],
-					login_type: user["login_type"],
-					phone_number: user["phone_number"],
-					accept_push: user["accept_push"],
-					cnt_reviewable: user["cnt_reviewable"],
-					cnt_stamp: user["cnt_stamp"],
-				},
+				user: queryResult,
 			});
 		}
 		else{
@@ -283,19 +342,20 @@ router
 			message: "server fault",
 		});
 	}
-	
 })
 
 /**
- * Username update API
+ * User information update API
  * 
- * Path: /:id/username
+ * Path: /:id/update
  * Method: PUT
  * 
  * Request
  * @param id string "_id" filed of user
  * 
- * @body updateTo string required username to update
+ * @body username string optional username to update
+ * @body device_id string optional device id to update
+ * @body cnt_stamp number optional count of stamp
  * 
  * Response
  * @code 200 updated successfully
@@ -306,9 +366,11 @@ router
  * @body result string required result of request ["ok", "fail", "error"]
  * @body message string optional message about result if fail or error
  */
-.put("/:id/username", async (req: express.Request, res: express.Response) => {
-	const username = (req as any).body["updateTo"];
+.put("/:id/update", async (req: express.Request, res: express.Response) => {
 	const id = (req as any).params["id"];
+	const username = (req as any).body["username"];
+	const deviceId = (req as any).body["device_id"];
+	const cntStamp = (req as any).body["cnt_stamp"];
 	
 	try{
 		// check if user exists
@@ -323,13 +385,20 @@ router
 		}
 
 		// check if username duplicated
-		if (await model.UserModel.findOne({username}).exec()) {
-			// username duplicates
-			return util.responseWithJson(res, 409, {
-				result: "fail",
-				message: "username duplicates",
-			});
+		if (username) {
+			if (await model.UserModel.findOne({username}).exec()) {
+				// username duplicates
+				return util.responseWithJson(res, 409, {
+					result: "fail",
+					message: "username duplicates",
+				});
+			}
 		}
+
+		const update: any = {};
+		if (username) { update["username"] = username; }
+		if (deviceId) { update["deviceid"] = deviceId; }
+		if (cntStamp) { update["cnt_stamp"] = cntStamp; }
 
 		const result = await userExist.update({username}).exec();
 
@@ -350,53 +419,6 @@ router
 
 })
 
-/**
- * Retrieve bucket by user API
- * 
- * Path: /:id/bucket
- * Method: GET
- * 
- * Request
- * @param id string "_id" field of user
- * 
- * Response
- * @code 200 ok
- * @code 404 user not found
- * @code 500 internal server error
- * 
- * @body result string required result of request ["ok", "fail", "error"]
- * @body message string optional message about result if fail or error
- * @body bucket Array<Product> optional bucket of user if succeed
- */
-.get("/:id/bucket", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).params["id"];
-
-	try{
-		const result = await model.UserModel.findById(id).populate("bucket").exec();
-		
-		// check if user exists
-		if (!result) {
-			console.log("[mongodb] user not found, _id: " + id);
-			return util.responseWithJson(res, 404, {
-				result: "fail",
-				message: "user not found",
-			});
-		}
-
-		console.log("[mongodb] retrieved bucket by user, _id: " + id);
-		return util.responseWithJson(res, 200, {
-			result: "ok",
-			bucket: (result as any)["bucket"],
-		});
-	}
-	catch (err) {
-		console.log("[mongodb] retrieve bucket by user error", err);
-		return util.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
-	}
-})
 /**
  * Duplication check API
  * 
@@ -454,6 +476,12 @@ router
 						});
 					}
 				}
+				else {
+					return util.responseWithJson(res, 400, {
+						result: "fail",
+						message: "unfulfilled parameter",
+					});
+				}
 			}
 			catch (err) {
 				return util.responseWithJson(res, 500, {
@@ -466,65 +494,6 @@ router
 		return util.responseWithJson(res, 400, {
 			result: "fail",
 			message: "unfulfilled parameter",
-		});
-	}
-})
-/**
- * User stamp modification API
- * 
- * This API just only modifies stamp count, handling of this can be occurred in other place(FE, other API, etc.)
- * 
- * Path: /:id/stamp
- * Method: PUT
- * 
- * Request
- * @param id string required "_id" field of user
- * 
- * @body updateTo number required stamp count to be updated
- * 
- * Response
- * @code 200 ok
- * @code 400 unfulfilled parameter
- * @code 404 user not found
- * @code 500 server fault
- * 
- * @body result string required result of request ["ok", "fail", "error"]
- * @body message string optional message about result
- */
-.put("/:id/stamp", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).params["id"];
-	const updateTo = (req as any).body["updateTo"];
-
-	// check parameter type
-	if (typeof updateTo !== "number") {
-		return util.responseWithJson(res, 400, {
-			result: "fail",
-			message: "unfulfilled parameter",
-		});
-	}
-
-	try{
-		const user = await model.UserModel.findById(id).exec();
-		if (!user) {
-			// user not found
-			return util.responseWithJson(res, 404, {
-				result: "fail",
-				message: "user not found",
-			});
-		}
-
-		(user as any)["cnt_stamp"] = updateTo;
-		const result = await user.save();
-		console.log("[mongodb] user stamp count modified, _id: ", id);
-		return util.responseWithJson(res, 200, {
-			result: "ok",
-		});
-	}
-	catch (err) {
-		console.log("[mongodb] modifying user stamp count error", err);
-		return util.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
 		});
 	}
 });
