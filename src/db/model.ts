@@ -24,7 +24,10 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		type: Number,
 		required: true,
 	},
-	ingredients: [String],
+	ingredient: {
+		type: String,
+		required: true,
+	},
 	category: {
 		type: mongoose.Schema.Types.ObjectId,
 		required: true,
@@ -37,11 +40,11 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		type: Number,
 		default: 0,
 	},
-	rate_avg: {
+	avg_rate: {
 		type: Number,
 		default: 0,
 	},
-	image: mongoose.Schema.Types.ObjectId,
+	images: [mongoose.Schema.Types.ObjectId],
 }));
 
 export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
@@ -121,6 +124,10 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		unique: true,
 		required: true,
 	},
+	is_admin: {
+		type: Boolean,
+		default: false,
+	},
 	username: {
 		type: String,
 		trim: true,
@@ -140,6 +147,10 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		lowercase: true,
 		enum: ["native", "google"],
 		required: true,
+	},
+	access_token: {
+		type: String,
+		required: false,
 	},
 	phone_number: {
 		type: String,

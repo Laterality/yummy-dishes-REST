@@ -22,13 +22,14 @@ router
  * @body password string required, raw string of password
  * @body username string required, username
  * @body login_type string required, login type ["native", "google"]
+ * @body access_token string optional access token if use other platforms
  * @body phone_number string required, phone number without hyphens
  * @body age number required, ages of user
  * @body device_id string required, device id for push message
  * 
  * Response
- * @code 200 request succeed
- * @code 400 bad request
+ * @code 201 request succeed
+ * @code 405 invalid parameters
  * @code 409 email or username duplicates
  * @code 500 internal server error
  * 
@@ -41,6 +42,7 @@ router
 	const password = (req as any).body["password"];
 	const username = (req as any).body["username"];
 	const loginType = (req as any).body["login_type"];
+	const accessToken = (req as any).body["access_token"];
 	const phoneNumber = (req as any).body["phone_number"];
 	const age = (req as any).body["age"];
 	const deviceId = (req as any).body["device_id"];
@@ -56,16 +58,15 @@ router
 		typeof age === "number" &&
 		typeof deviceId === "string") {
 		
-		const regexNumber = new RegExp("[0-9]");
+		const regexNumber = new RegExp("[0-9]+$");
 		if (!regexNumber.test(phoneNumber)){
 			// if phone number has non-number character
-			return util.responseWithJson(res, 400, {
+			return util.responseWithJson(res, 405, {
 				result: "fail",
 				message: "phone number must have only numbers",
 			});
 		}
 
-		// TODO: check if user email duplicates
 		const duplRes = await model.UserModel.findOne({
 			$or: [
 				{email},
@@ -78,19 +79,23 @@ router
 		if (duplRes) {
 			return util.responseWithJson(res, 409, {
 				result: "fail",
-				message: "email duplicates",
+				message: "email or username duplicates",
 			});
 		}
 
+		const nativeLogin = loginType === "native";
+
 		// encrypt password
-		const auth = await util.encryption(password);
+		const auth = nativeLogin ? await util.encryption(password) :
+		["", ""];
 
 		const newUser = new model.UserModel({
 		email,
-		password: auth[0],
-		salt: auth[1],
+		password: nativeLogin ? auth[0] : "",
+		salt: nativeLogin ? auth[1] : "",
 		username,
 		login_type: loginType,
+		access_token: nativeLogin ? "" : accessToken,
 		phone_number: phoneNumber,
 		age,
 		device_id: deviceId,
@@ -99,7 +104,7 @@ router
 		try{
 			const execUser = await newUser.save();
 			console.log("[mongodb] new User saved");
-			return util.responseWithJson(res, 200, {
+			return util.responseWithJson(res, 201, {
 				result: "ok",
 				user: {
 					_id: (execUser as any)["_id"],
@@ -119,7 +124,7 @@ router
 		}
 	}
 	else {
-		console.log("[api] unfulfilled parameters", `
+		console.log("[api] invalid parameters", `
 		tyypeof email: ${typeof email},\n
 		typeof password: ${typeof password},\n
 		typeof username: ${typeof username},\n
@@ -127,9 +132,9 @@ router
 		typeof phone_number: ${typeof phoneNumber},\n
 		typeof age: ${typeof age}}
 		typeof device_id: ${typeof deviceId}`);
-		return util.responseWithJson(res, 403, {
+		return util.responseWithJson(res, 405, {
 			result: "fail",
-			error: "unfulfilled parameters",
+			error: "invalid parameters",
 		});
 	}
 })
@@ -145,12 +150,13 @@ router
  * Request
  * @body email string required user email
  * @body password string required raw string of user password
+ * @body access_token string optional access token if use other platform
  * @body login_type string required login type of user ["native", "google"]
  * 
  * Response
  * @code 200 ok, but not created
  * @code 201 created
- * @code 400 unfulfilled parameters
+ * @code 405 invalid parameters
  * @code 404 email or password incorrect
  * @code 500 server fault
  * 
@@ -161,7 +167,9 @@ router
 .post("/login", async (req: express.Request, res: express.Response) => {
 	const email = (req as any).body["email"];
 	const rawPassword = (req as any).body["password"];
+	const accessToken = (req as any).body["access_token"];
 	const loginType = (req as any).body["login_type"];
+	const nativeLogin = loginType === "native";
 
 	if (typeof email === "string" &&
 		typeof rawPassword === "string" &&
@@ -186,7 +194,8 @@ router
 				});
 			}
 
-			if (bcrypt.compareSync(rawPassword, (user as any)["password"])) {
+			if ((nativeLogin && bcrypt.compareSync(rawPassword, (user as any)["password"])) ||
+			(user as any)["login_type"] === loginType && (user as any)["access_token"] === accessToken) {
 				// login success
 				const auser = user as any;
 				return util.responseWithJson(res, 201, {
@@ -219,9 +228,9 @@ router
 		}
 	}
 	else {
-		return util.responseWithJson(res, 400, {
+		return util.responseWithJson(res, 405, {
 			result: "error",
-			message: "unfulfilled parameters",
+			message: "invalid parameters",
 		});
 	}
 })
@@ -229,7 +238,7 @@ router
 /**
  * User retrieval API
  * 
- * Path: /:id
+ * Path: /{userId}
  * Method: GET
  * 
  * Request
@@ -252,17 +261,22 @@ router
 .get("/:id", async (req: express.Request, res: express.Response) => {
 	const id = (req as any).params["id"];
 	// console.log("[api] retrieve user, _id: " + id);
+	const q = (req as any).query["q"];
 
-	const queries = ((req as any).query["q"] as string).split(",");
+	const queries: string[] = q ? q.split(",") : [];
 	
 	let query = model.UserModel.findById(id);
-	query = queries.indexOf("likes") > -1 ? query : query.populate("likes", "name rate_avg cnt_like");
-	query = queries.indexOf("comments") > -1 ? query : query.populate("comments", "content rate")
-	.populate("comments product", "name")
-	.populate("comments tastes", "text");
-	query = queries.indexOf("coupons") > -1 ? query : query.populate("coupons");
-	query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket");
-	query = queries.indexOf("tastes") > -1 ? query : query.populate("tastes");
+	
+	// if query exists, handle it
+	if (queries.length !== 0){
+		query = queries.indexOf("likes") > -1 ? query : query.populate("likes", "name rate_avg cnt_like");
+		query = queries.indexOf("comments") > -1 ? query : query.populate("comments", "content rate")
+		.populate("comments product", "name")
+		.populate("comments tastes", "text");
+		query = queries.indexOf("coupons") > -1 ? query : query.populate("coupons");
+		query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket");
+		query = queries.indexOf("tastes") > -1 ? query : query.populate("tastes");
+	}
 
 	try{
 		const result = await query.exec();
@@ -347,7 +361,7 @@ router
 /**
  * User information update API
  * 
- * Path: /:id/update
+ * Path: /{userId}/update
  * Method: PUT
  * 
  * Request
@@ -371,6 +385,7 @@ router
 	const username = (req as any).body["username"];
 	const deviceId = (req as any).body["device_id"];
 	const cntStamp = (req as any).body["cnt_stamp"];
+	const acceptPush = (req as any).body["accept_push"];
 	
 	try{
 		// check if user exists
@@ -399,8 +414,14 @@ router
 		if (username) { update["username"] = username; }
 		if (deviceId) { update["deviceid"] = deviceId; }
 		if (cntStamp) { update["cnt_stamp"] = cntStamp; }
+		if (acceptPush) {
+			update["accept_push"]["accepted"] = acceptPush["accepted"]; 
+			if (acceptPush["accepted"]) {
+				update["accept_push"]["date_accepted"] = Date.now();
+			}
+		}
 
-		const result = await userExist.update({username}).exec();
+		const result = await userExist.update(update).exec();
 
 		console.log("[mongodb] update result", result);
 
@@ -430,6 +451,8 @@ router
  * @query value string required value to check duplication
  * 
  * Response
+ * @code 200 ok
+ * @code 405 invalid parameters
  * @body result string required result of request ["ok", "fail", "error"]
  * @body message string required result of check if request succeed ["duplicates", "not duplicates"], 
  * or message about result if not
@@ -477,9 +500,9 @@ router
 					}
 				}
 				else {
-					return util.responseWithJson(res, 400, {
+					return util.responseWithJson(res, 405, {
 						result: "fail",
-						message: "unfulfilled parameter",
+						message: "invalid parameter",
 					});
 				}
 			}
@@ -491,9 +514,9 @@ router
 			}
 	}
 	else {
-		return util.responseWithJson(res, 400, {
+		return util.responseWithJson(res, 405, {
 			result: "fail",
-			message: "unfulfilled parameter",
+			message: "invalid parameter",
 		});
 	}
 });

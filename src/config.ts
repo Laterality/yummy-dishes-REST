@@ -10,5 +10,5 @@ export const config = {
 
 	},
 	path_public: "public",
-	baseurl: "https://apps.latera.kr/yd/img/",
+	baseurl: "BASE_URL_FOR_STATIC_FILE",
 };
