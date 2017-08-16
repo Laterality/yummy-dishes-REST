@@ -1,7 +1,7 @@
 import * as express from "express";
 
-import { router as userApi } from "./user";
 import { router as imageApi } from "./image";
+import { router as userApi } from "./user";
 
 export const router = express.Router();
 

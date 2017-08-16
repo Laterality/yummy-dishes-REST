@@ -9,6 +9,5 @@ export const config = {
 		uri: "MONGODB_URI",
 
 	},
-	path_public: "public",
-	baseurl: "BASE_URL_FOR_STATIC_FILE",
+	path_public: "out/public",
 };

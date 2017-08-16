@@ -21,7 +21,7 @@ app.set("view engine", "jade");
 app.use(logger("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(express.static(path.join(__dirname, config.path_public)));
+app.use("/static", express.static(path.join(__dirname, config.path_public)));
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
 	console.log(req.path);

@@ -8,6 +8,10 @@ export const NoticeModel = mongoose.model("Notice", new mongoose.Schema({
 
 export const ImageModel = mongoose.model("Image", new mongoose.Schema({
 	path: String,
+	date_reg: {
+		type: Date,
+		default: Date.now,
+	},
 }));
 
 export const CategoryModel = mongoose.model("Category", new mongoose.Schema({
@@ -109,9 +113,12 @@ export const TasteModel = mongoose.model("Taste", new mongoose.Schema({
 }));
 
 export const CouponModel = mongoose.model("Coupon", new mongoose.Schema({
-	cpon_num: Number,
-	date_reg: Number,
-	date_expiration: Number,
+	coupon_num: Number,
+	date_reg: {
+		type: Date,
+		default: Date.now,
+	},
+	date_expiration: Date,
 	message: String,
 	available: Boolean,
 }));

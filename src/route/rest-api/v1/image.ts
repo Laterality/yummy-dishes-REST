@@ -6,12 +6,12 @@ import * as path from "path";
 
 import { config } from "../../../config";
 import * as model from "../../../db/model";
-import * as util from "../../../util";
+import * as fileHandler from "../../../lib/file-handler";
 
 export const router = express.Router();
 
 router
-.post("/upload", util.upload.single("content"), async (req: express.Request,
+.post("/upload", fileHandler.upload.single("content"), async (req: express.Request,
 	res: express.Response, 
 	next: express.NextFunction) => {
 	res.status(200).send("ok");
@@ -19,6 +19,9 @@ router
 	if (!file) {
 		console.log("file not found");
 		return;
+	}
+	else {
+		fileHandler.fileHandler(file);
 	}
 
 });

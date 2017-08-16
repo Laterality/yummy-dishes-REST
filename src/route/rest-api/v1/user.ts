@@ -3,7 +3,8 @@ import * as express from "express";
 import * as mongoose from "mongoose";
 
 import * as model from "../../../db/model";
-import * as util from "../../../util";
+import * as auth from "../../../lib/auth";
+import * as resHandler from "../../../lib/response-handler";
 
 export const router = express.Router();
 
@@ -61,7 +62,7 @@ router
 		const regexNumber = new RegExp("[0-9]+$");
 		if (!regexNumber.test(phoneNumber)){
 			// if phone number has non-number character
-			return util.responseWithJson(res, 405, {
+			return resHandler.responseWithJson(res, 405, {
 				result: "fail",
 				message: "phone number must have only numbers",
 			});
@@ -77,7 +78,7 @@ router
 		console.log("duplRes: ", duplRes);
 		
 		if (duplRes) {
-			return util.responseWithJson(res, 409, {
+			return resHandler.responseWithJson(res, 409, {
 				result: "fail",
 				message: "email or username duplicates",
 			});
@@ -86,13 +87,13 @@ router
 		const nativeLogin = loginType === "native";
 
 		// encrypt password
-		const auth = nativeLogin ? await util.encryption(password) :
+		const authInfo = nativeLogin ? await auth.encryption(password) :
 		["", ""];
 
 		const newUser = new model.UserModel({
 		email,
-		password: nativeLogin ? auth[0] : "",
-		salt: nativeLogin ? auth[1] : "",
+		password: nativeLogin ? authInfo[0] : "",
+		salt: nativeLogin ? authInfo[1] : "",
 		username,
 		login_type: loginType,
 		access_token: nativeLogin ? "" : accessToken,
@@ -104,7 +105,7 @@ router
 		try{
 			const execUser = await newUser.save();
 			console.log("[mongodb] new User saved");
-			return util.responseWithJson(res, 201, {
+			return resHandler.responseWithJson(res, 201, {
 				result: "ok",
 				user: {
 					_id: (execUser as any)["_id"],
@@ -117,7 +118,7 @@ router
 		}
 		catch (err){
 			console.log("[mongodb] user saving error", err);
-			return util.responseWithJson(res, 500, {
+			return resHandler.responseWithJson(res, 500, {
 				result: "error",
 				message: "server fault",
 			});
@@ -132,7 +133,7 @@ router
 		typeof phone_number: ${typeof phoneNumber},\n
 		typeof age: ${typeof age}}
 		typeof device_id: ${typeof deviceId}`);
-		return util.responseWithJson(res, 405, {
+		return resHandler.responseWithJson(res, 405, {
 			result: "fail",
 			error: "invalid parameters",
 		});
@@ -180,7 +181,7 @@ router
 			if (!user && loginType === "google") {
 				// use login with google but account for service not exists
 				// respond to user sign up
-				return util.responseWithJson(res, 200, {
+				return resHandler.responseWithJson(res, 200, {
 					result: "ok",
 					message: "redirect to sign up",
 				});
@@ -188,7 +189,7 @@ router
 			else if (!user) {
 				console.log("user not found, email: " + email);
 
-				return util.responseWithJson(res, 404, {
+				return resHandler.responseWithJson(res, 404, {
 					result: "fail",
 					message: "email or password incorrect",
 				});
@@ -198,7 +199,7 @@ router
 			(user as any)["login_type"] === loginType && (user as any)["access_token"] === accessToken) {
 				// login success
 				const auser = user as any;
-				return util.responseWithJson(res, 201, {
+				return resHandler.responseWithJson(res, 201, {
 					result: "ok",
 					user: {
 						_id: auser["_id"],
@@ -213,7 +214,7 @@ router
 			}
 			else {
 				// login fail (password incorrect)
-				return util.responseWithJson(res, 404, {
+				return resHandler.responseWithJson(res, 404, {
 					result: "fail",
 					message: "email or password incorrect",
 				});
@@ -221,14 +222,14 @@ router
 		}
 		catch (err) {
 			console.log("[api] user login error", err);
-			return util.responseWithJson(res, 500, {
+			return resHandler.responseWithJson(res, 500, {
 				result: "error",
 				message: "server fault",
 			});
 		}
 	}
 	else {
-		return util.responseWithJson(res, 405, {
+		return resHandler.responseWithJson(res, 405, {
 			result: "error",
 			message: "invalid parameters",
 		});
@@ -335,7 +336,7 @@ router
 				queryResult["tastes"] = user["tastes"];
 			}
 
-			return util.responseWithJson(res, 200, {
+			return resHandler.responseWithJson(res, 200, {
 				result: "ok",
 				user: queryResult,
 			});
@@ -343,7 +344,7 @@ router
 		else{
 			// if not found
 			console.log("[mongodb] user nt found, _id: " + id);
-			return util.responseWithJson(res, 404, {
+			return resHandler.responseWithJson(res, 404, {
 				result: "fail",
 				message: "not found",
 			});
@@ -351,7 +352,7 @@ router
 	}
 	catch (err){
 		console.log("[mongodb] user retrival error", err);
-		return util.responseWithJson(res, 500, {
+		return resHandler.responseWithJson(res, 500, {
 			result: "error",
 			message: "server fault",
 		});
@@ -393,7 +394,7 @@ router
 		if (!userExist) {
 			// if user not found
 			console.log("[mongodb] user not found, _id: " + id);
-			return util.responseWithJson(res, 404, {
+			return resHandler.responseWithJson(res, 404, {
 				result: "fail",
 				message: "user not found",
 			});
@@ -403,7 +404,7 @@ router
 		if (username) {
 			if (await model.UserModel.findOne({username}).exec()) {
 				// username duplicates
-				return util.responseWithJson(res, 409, {
+				return resHandler.responseWithJson(res, 409, {
 					result: "fail",
 					message: "username duplicates",
 				});
@@ -426,13 +427,13 @@ router
 		console.log("[mongodb] update result", result);
 
 		console.log("[mongodb] username updated, username: " + username);
-		return util.responseWithJson(res, 200, {
+		return resHandler.responseWithJson(res, 200, {
 			result: "ok",
 		});
 	}
 	catch (err) {
 		console.log("[mongodb] retrieve user by username error", err);
-		return util.responseWithJson(res, 500, {
+		return resHandler.responseWithJson(res, 500, {
 			result: "error",
 			error: "server fault",
 		});
@@ -470,13 +471,13 @@ router
 					const result = await model.UserModel.findOne({email: value}).exec();
 					if (!result) {
 						// if not duplicates
-						return util.responseWithJson(res, 200, {
+						return resHandler.responseWithJson(res, 200, {
 							result: "ok",
 							message: "not duplicates",
 						});
 					}
 					else {
-						return util.responseWithJson(res, 200, {
+						return resHandler.responseWithJson(res, 200, {
 							result: "ok",
 							message: "duplicates",
 						});
@@ -487,34 +488,34 @@ router
 					const result = await model.UserModel.findOne({username: value}).exec();
 					if (!result) {
 						// if not duplicates
-						return util.responseWithJson(res, 200, {
+						return resHandler.responseWithJson(res, 200, {
 							result: "ok",
 							message: "not duplicates",
 						});
 					}
 					else {
-						return util.responseWithJson(res, 200, {
+						return resHandler.responseWithJson(res, 200, {
 							result: "ok",
 							message: "duplicates",
 						});
 					}
 				}
 				else {
-					return util.responseWithJson(res, 405, {
+					return resHandler.responseWithJson(res, 405, {
 						result: "fail",
 						message: "invalid parameter",
 					});
 				}
 			}
 			catch (err) {
-				return util.responseWithJson(res, 500, {
+				return resHandler.responseWithJson(res, 500, {
 					result: "error",
 					message: "server fault",
 				});
 			}
 	}
 	else {
-		return util.responseWithJson(res, 405, {
+		return resHandler.responseWithJson(res, 405, {
 			result: "fail",
 			message: "invalid parameter",
 		});
