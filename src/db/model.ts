@@ -28,10 +28,15 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		type: Number,
 		required: true,
 	},
+	amount: {
+		type: String,
+		required: true,
+	},
 	ingredient: {
 		type: String,
 		required: true,
 	},
+	contents: [String],
 	category: {
 		type: mongoose.Schema.Types.ObjectId,
 		required: true,
