@@ -54,6 +54,9 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		default: 0,
 	},
 	images: [mongoose.Schema.Types.ObjectId],
+}).index({
+	name: "text",
+	ingredient: "text",
 }));
 
 export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({

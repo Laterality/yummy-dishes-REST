@@ -1,5 +1,6 @@
 import * as express from "express";
 
+import { router as categoryApi } from "./category";
 import { router as imageApi } from "./image";
 import { router as userApi } from "./user";
 
@@ -10,4 +11,5 @@ router.use((req: express.Request, res: express.Response, next: express.NextFunct
 	next();
 })
 .use("/user", userApi)
-.use("/image", imageApi);
+.use("/image", imageApi)
+.use("/category", categoryApi);

@@ -63,6 +63,13 @@ res: express.Response) => {
 			images: imageIds,
 		}).save();
 
+		// add created product's _id into category's "products" field
+		await model.CategoryModel.findByIdAndUpdate(category, {
+			$push: {
+				products: newProduct._id,
+			},
+		});
+
 		return resHandler.responseWithJson(res, 201, {
 			result: "ok",
 			product: {
@@ -111,16 +118,19 @@ res: express.Response) => {
 	const queries = (q as string).split(",");
 
 	// handle reqeust queries
-	const queryBool: any = {};
-
-	if (queries.indexOf("amount") > -1) { queryBool["amount"] = true; }
-	if (queries.indexOf("ingredient") > -1) { queryBool["ingredient"] = true; }
-	if (queries.indexOf("category") > -1) { queryBool["category"] = true; }
-	if (queries.indexOf("contents") > -1) { queryBool["contents"] = true; }
-	if (queries.indexOf("date_reg") > -1) { queryBool["date_reg"] = true; }
-	if (queries.indexOf("cnt_like") > -1) { queryBool["cnt_like"] = true; }
-	if (queries.indexOf("avg_rate") > -1) { queryBool["avg_rate"] = true; }
-	if (queries.indexOf("images") > - 1) { queryBool["images"] = true; }
+	const objProjection: any = {
+		_id: true,
+		name: true,
+		price: true,
+		amount: queries.indexOf("amount") > -1,
+		ingredient: queries.indexOf("ingredient") > -1,
+		category: queries.indexOf("category") > -1,
+		contents: queries.indexOf("contents") > -1,
+		date_reg: queries.indexOf("date_reg") > -1,
+		cnt_like: queries.indexOf("cnt_like") > -1,
+		avg_rate: queries.indexOf("avg_rate") > -1,
+		images: queries.indexOf("images") > -1,
+	};
 
 	if (typeof id !== "string") {
 		return resHandler.responseWithJson(res, 405, {
@@ -131,9 +141,9 @@ res: express.Response) => {
 
 	try {
 		// make db query
-		let findQuery = model.ProductModel.findById(id);
-		if (queryBool["category"]) { findQuery = findQuery.populate("category"); }
-		if (queryBool["images"]) { findQuery = findQuery.populate("images"); }
+		let findQuery = model.ProductModel.findById(id, objProjection);
+		if (objProjection["category"]) { findQuery = findQuery.populate("category"); }
+		if (objProjection["images"]) { findQuery = findQuery.populate("images"); }
 
 		const result = (await findQuery.exec()) as any;
 
@@ -150,35 +160,35 @@ res: express.Response) => {
 			price: result["price"],
 		};
 
-		if (queryBool["amount"]) {
+		if (objProjection["amount"]) {
 			product["amount"] = result["amount"];
 		}
 
-		if (queryBool["ingredient"]) {
+		if (objProjection["ingredient"]) {
 			product["ingredient"] = result["ingredient"];
 		}
 
-		if (queryBool["category"]) {
+		if (objProjection["category"]) {
 			product["category"] = result["category"];
 		}
 
-		if (queryBool["contents"]) {
+		if (objProjection["contents"]) {
 			product["contents"] = result["contents"];
 		}
 
-		if (queryBool["date_reg"]) {
+		if (objProjection["date_reg"]) {
 			product["date_reg"] = result["date_reg"];
 		}
 
-		if (queryBool["cnt_like"]) {
+		if (objProjection["cnt_like"]) {
 			product["cnt_like"] = result["cnt_like"];
 		}
 
-		if (queryBool["avg_rate"]) {
+		if (objProjection["avg_rate"]) {
 			product["avg_rate"] = result["avg_rate"];
 		}
 
-		if (queryBool["images"]) {
+		if (objProjection["images"]) {
 			product["images"] = result["images"];
 		}
 
@@ -286,6 +296,7 @@ res: express.Response) => {
  * 
  * Response
  * @code 200 ok
+ * @code 404 not found
  * @code 500 server fault
  * 
  * @body result string required result of request
@@ -299,16 +310,124 @@ res: express.Response) => {
 	}
 
 	try {
-		const result = model.ProductModel.findByIdAndRemove(id).exec();
+		const result = await model.ProductModel.findById(id, {category: true}).exec();
 
-		console.log("[mongodb] product removed");
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-		});
+		// remove product from its category's "products" array
+		if (result) {
+			await result.remove();
+			await model.CategoryModel.findByIdAndUpdate((result as any)["category"]._id, 
+			{
+				$pullAll: {
+					products: [result._id],
+				},
+			}).exec();
+
+			console.log("[mongodb] product removed");
+			return resHandler.responseWithJson(res, 200, {
+				result: "ok",
+			});
+		}
+		else {
+			console.log("[mongodb] product not found, _id: " + id);
+			return resHandler.responseWithJson(res, 404, {
+				result: "fail",
+				message: "not found",
+			});
+		}
 	}
 	catch (err) {
 		console.log("[mongodb] delete product error", err);
 		resHandler.responseWithJson(res, 500, {
+			result: "error",
+			message: "server fault",
+		});
+	}
+})
+/**
+ * Production search API
+ * 
+ * Path: /search
+ * Method: GET
+ * 
+ * Request
+ * @query sort string optional field to sort descending by ["name", "cnt_like", "avg_rate"], default is name
+ * @query keyword string optional keyword to search
+ * @query category string optional "_id" field of category
+ * @query q string optional field to projection 
+ * ["amount", ingredient", "category", "contents", "date_reg", "cnt_like", "avg_rate", "images"]
+ * 
+ * Response
+ * @code 200 ok
+ * @code 500 server fault
+ * 
+ * @body result string required result of request
+ * @body message string optional message about result
+ * @body products ProductModel[] result if success
+ * 
+ */
+.get("/search", async (req: express.Request, res: express.Response) => {
+	const keyword = (req as any).query["keyword"];
+	const category = (req as any).query["category"];
+	const query = (req as any).query["q"];
+	const queries = query ? (query as string).split(",") : [];
+	let sort = (req as any).query["sort"];
+
+	const objFind: any = {};
+	const objProjection: any = {
+		name: true,
+		price: true,
+		amount: queries.indexOf("amount") > -1,
+		ingredient: queries.indexOf("ingredient") > -1,
+		contents: queries.indexOf("contents") > -1,
+		category: queries.indexOf("category") > -1,
+		date_reg: queries.indexOf("date_reg") > -1,
+		cnt_like: queries.indexOf("cnt_likes") > -1,
+		avg_rate: queries.indexOf("avg_rate") > -1,
+	};
+	const objSort: any = {
+		score: {
+			$meta: "textScore",
+		},
+	};
+
+	// determine conditions
+	// if keyword not exists or keywords length is zero, make query find all
+	const findAll = !keyword || (keyword.length === 0);
+	// if category filter exists
+	const filterByCategory = (!category || (category.length === 0));
+	
+	if (!new RegExp("^(name|cnt_like|avg_rate)+$").test(sort)) {
+		sort = "name";
+	}
+
+	if (findAll) {
+		objFind["$text"] = {
+			$search: keyword,
+		};
+	}
+
+	if (filterByCategory) {
+		objFind["category"] = category;
+	}
+
+	let dbQuery = model.ProductModel.find(objFind, objProjection)
+	.sort(objSort);
+	
+	if (objProjection["category"]) {
+		dbQuery = dbQuery.populate("category");
+	}
+
+	try {
+		const result = await dbQuery.exec();
+		
+		return resHandler.responseWithJson(res, 200, {
+			result: "ok",
+			products: result,
+		});
+	}
+	catch (err) {
+		console.log("[mongodb] search product error ", err);
+		return resHandler.responseWithJson(res, 500, {
 			result: "error",
 			message: "server fault",
 		});
