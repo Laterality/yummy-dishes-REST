@@ -42,7 +42,7 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		required: true,
 	},
 	date_reg: {
-		type: Number,
+		type: Date,
 		default: Date.now,
 	},
 	cnt_like: {
