@@ -60,7 +60,7 @@ export async function createProduct(req: express.Request){
 				ingredient: ingreds,
 				contents,
 				category,
-				images: imageIds,
+				images: imageIds ? imageIds : [],
 			}).save();
 
 			// add created product's _id into category's "products" field
@@ -311,7 +311,7 @@ export async function updateProduct(req: express.Request, productId: string) {
 		try {
 			const result = await model.ProductModel.findByIdAndUpdate(id, update).exec();
 
-			console.log("[mongodb] product updated", result);
+			// console.log("[mongodb] product updated", result);
 
 			return new resHandler.ApiResponse(
 				resHandler.ApiResponse.CODE_OK,
@@ -356,10 +356,6 @@ export async function updateProduct(req: express.Request, productId: string) {
  */
 export async function deleteProduct(req: express.Request, productId: string) {
 	const id = productId; // (req as any).params["id"];
-
-	if ((id as any).length !== 0) {
-		console.log("[api] id param's length is zero");
-	}
 
 	try {
 		const result = await model.ProductModel.findById(id, {category: true}).exec();

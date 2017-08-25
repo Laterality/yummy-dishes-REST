@@ -4,7 +4,6 @@ import * as mongoose from "mongoose";
 import * as model from "../../../db/model";
 import * as resHandler from "../../../lib/response-handler";
 
-export const router = express.Router()
 /**
  * Category creation API
  * 
@@ -22,35 +21,40 @@ export const router = express.Router()
  * @body message string optional message about result
  * @body category CategoryModel created category if success
  */
-.post("/register", async (req: express.Request, res: express.Response) => {
+export async function createCategory(req: express.Request) {
 	const name = (req as any).body["name"];
 
 	try {
-
+		// console.log("[api] create category with name: " + name);
+		// console.log("[api] request body\n", (req as any).body);
 		const newCategory = await new model.CategoryModel({
 			name,
 		}).save();
 
 		console.log("[mongodb] category created, _id: " + newCategory._id);
 
-		return resHandler.responseWithJson(res, 201, {
-			result: "ok",
-			category: {
-				_id: newCategory._id,
-				name: (newCategory as any)["name"],
-				products: [],
-			},
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_CREATED,
+			resHandler.ApiResponse.RESULT_OK,
+			"",
+			{
+				name: "category",
+				obj: {
+					_id: newCategory._id,
+					name: (newCategory as any)["name"],
+					products: [],
+				},
+			});
 	}
 	catch (err) {
 		console.log("[mongodb] category create error ", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
-	}
 
-})
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
+	}
+}
 /**
  * Category list retrieve API
  * 
@@ -69,26 +73,31 @@ export const router = express.Router()
  * @body categories CategoryModel[] optional categories if success, 
  * only includes "_id" and name of category, not products
  */
-.get("/categories", async (req: express.Request, res: express.Response) => {
+export async function retrieveCategories(req: express.Request) {
 	try {
 		const result = await model.CategoryModel.find({}, {
-			_id: true,
-			name: true,
+			_id:	true,
+			name:	true,
 		}).exec();
 		
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-			categories: result,
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK,
+			"",
+			{
+				name: "categories",
+				obj: result,
+			});
 	}
 	catch (err) {
 		console.log("[mongodb] category retrieve error ", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
-})
+}
 /**
  * Retrieve products by category
  * 
@@ -96,7 +105,9 @@ export const router = express.Router()
  * Method: GET
  * 
  * Request
- * @param categoryId "_Id" field of category
+ * @param categoryId string required "_Id" field of category
+ * @query q string optional filed to be returned separated by comma, default "name" and "price"
+ * ["amount", "contents", "ingredient", "date_reg", "cnt_like", "avg_rate", "images"]
  * 
  * Resopnse
  * @code 200 ok
@@ -107,33 +118,65 @@ export const router = express.Router()
  * @body result string required result of request
  * @body message message about result
  */
-.get("/:id/products", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).body["productId"];
+export async function retrieveProductsByCategory(req: express.Request, categoryId: string) {
+	const id	= categoryId; // (req as any).body["productId"];
+	const q		= (req as any).query["q"];
+
+	const queries = q ? (q as string).split(",") : [];
+
+	let strSelection = "_id name";
+
+	for (const i in queries) {
+		if (i) {
+			strSelection += " " + i;
+		}
+	}
 
 	if (!id || (id as string).length === 0) {
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			message: "invalid parameters",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
 	}
 
 	try {
+		const dbQuery = model.CategoryModel.findById(id);
+		console.log("[api] query: ", dbQuery.getQuery());
 		const result = await model.CategoryModel.findById(id, {products: true})
-		.populate("products").exec();
+		.populate("products", strSelection)
+		.exec(); // model.CategoryModel.findById(id, {products: true})
+		// .populate("products", strSelection)
+		// model.CategoryModel.find({});
+		// .populate("products")
+		// .exec();
+		
+		// console.log("[api] result with _id:" + id + "\n", result);
+		if (!result) {
+			// console.log("[api] category not found _id: " + id);
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"not found");
+		}
 
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-			products: result,
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK,
+			"",
+			{
+				name: "category",
+				obj: result,
+			});
 	}
 	catch (err) {
 		console.log("[mongodb] retrieve category's product error ", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
-})
+}
 /**
  * Category update API
  * 
@@ -153,15 +196,15 @@ export const router = express.Router()
  * @body result string required result of request
  * @body message string optional message about request
  */
-.put("/:id/update", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).query["id"];
+export async function updateCategory(req: express.Request, categoryId: string) {
+	const id = categoryId; // (req as any).query["id"];
 	const name = (req as any).body["name"];
 
 	if (!name) {
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			message: "invalid parameters",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
 	}
 
 	try {
@@ -170,27 +213,27 @@ export const router = express.Router()
 
 		if (!result) {
 			console.log("[api] ");
-			return resHandler.responseWithJson(res, 404, {
-				result: "fail",
-				message: "not found",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"not found");
 		}
 
 		(result as any)["name"] = name;
 		await result.save();
 
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK);
 	}
 	catch (err) {
 		console.log("[api] mongodb error ", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
-})
+}
 /**
  * Category removal API
  * 
@@ -210,15 +253,15 @@ export const router = express.Router()
  * @body message string optional message about result
  * 
  */
-.delete("/:id/delete", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).query["id"];
+export async function deleteCategory(req: express.Request, categoryId: string) {
+	const id = categoryId; // (req as any).query["id"];
 	
 	if (!id) {
 		console.log("[api] invalid parameter");
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			message: "invalid parameters",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
 	}
 
 	try {
@@ -226,21 +269,21 @@ export const router = express.Router()
 		
 		if (!result) {
 			console.log("[api] result not found");
-			return resHandler.responseWithJson(res, 404, {
-				result: "fail",
-				message: "not found",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"not found");
 		}
 
 		await result.remove();
 
 		console.log("[api] category removed, _id: " + id);
 
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK);
 	}
 	catch (err) {
 		console.log("[api] category delete error ", err); 
 	}
-});
+}

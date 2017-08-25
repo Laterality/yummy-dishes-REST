@@ -29,25 +29,27 @@ export const router = express.Router();
  * @body message string optional message about result
  * @body image ImageModel optional uploaded image information if request succeed
  */
-router
-.post("/upload", fileHandler.upload.single("content"), 
-async (req: express.Request, res: express.Response) => {
+export async function uploadImage(req: express.Request){
 	const file = (req as any).file;
 	if (!file) {
 		console.log("[api] file not exists");
 
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			message: "file not exists",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"file not exists");
 	}
 	else {
 		try {
 			const image = await fileHandler.fileHandler(file);
 
-			return resHandler.responseWithJson(res, 201, {
-					result: "ok",
-					image: {
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_CREATED,
+				resHandler.ApiResponse.RESULT_OK,
+				"",
+				{
+					name: "image",
+					obj: {
 						_id: image._id,
 						path: (image as any)["path"],
 					},
@@ -55,17 +57,15 @@ async (req: express.Request, res: express.Response) => {
 		}
 		catch (err) {
 			if (err.message === "unsupported file extension") {
-				return resHandler.responseWithJson(res, 405, {
-					result: "fail",
-					message: err.message,
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+					resHandler.ApiResponse.RESULT_FAIL,
+					err.message);
 			}
-			return resHandler.responseWithJson(res, 500, {
-				result: "error",
-				message: "server fault",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_SERVER_FAULT,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"server fault");
 		}
-		
 	}
-
-});
+}

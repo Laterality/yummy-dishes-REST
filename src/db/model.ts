@@ -15,8 +15,14 @@ export const ImageModel = mongoose.model("Image", new mongoose.Schema({
 }));
 
 export const CategoryModel = mongoose.model("Category", new mongoose.Schema({
-	name: String,
-	products: [mongoose.Schema.Types.ObjectId],
+	name: {
+		type: String,
+		required: true,
+	},
+	products: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	}],
 }));
 
 export const ProductModel = mongoose.model("Product", new mongoose.Schema({
@@ -39,6 +45,7 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 	contents: [String],
 	category: {
 		type: mongoose.Schema.Types.ObjectId,
+		ref: "Category",
 		required: true,
 	},
 	date_reg: {
@@ -53,7 +60,10 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 		type: Number,
 		default: 0,
 	},
-	images: [mongoose.Schema.Types.ObjectId],
+	images: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Image",
+	}],
 }).index({
 	name: "text",
 	ingredient: "text",
@@ -64,7 +74,10 @@ export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	prods_today: [mongoose.Schema.Types.ObjectId],
+	prods_today: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	}],
 	timesale: {
 		started: {
 			type: Boolean,
@@ -74,13 +87,22 @@ export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
 			type: Number,
 			default: 0,
 		},
-		prods: [mongoose.Schema.Types.ObjectId],
+		prods: [{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Product",
+		}],
 	},
 }));
 
 export const Comment = mongoose.model("Comment", new mongoose.Schema({
-	author: mongoose.Schema.Types.ObjectId,
-	product: mongoose.Schema.Types.ObjectId,
+	author: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
+	product: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	},
 	date_reg: {
 		type: Date,
 		default: Date.now,
@@ -90,10 +112,16 @@ export const Comment = mongoose.model("Comment", new mongoose.Schema({
 		min: 0,
 		max: 5,
 	},
-	tastes: [mongoose.Schema.Types.ObjectId],
+	tastes: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Taste",
+	}],
 	content: {
 		text: String,
-		images: [mongoose.Schema.Types.ObjectId],
+		images: [{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Image",
+		}],
 	},
 }));
 
@@ -106,8 +134,14 @@ export const OrderModel = mongoose.model("Order", new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	orderer: mongoose.Schema.Types.ObjectId,
-	products: mongoose.Schema.Types.ObjectId,
+	orderer: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
+	products: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	},
 	state: {
 		type: String,
 		enum: ["pending", "processing", "receiving", "received", "rejected"],
@@ -202,11 +236,26 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 			default: Date.now,
 		},
 	},
-	bucket: [mongoose.Schema.Types.ObjectId],
-	tastes: [mongoose.Schema.Types.ObjectId],
-	likes: [mongoose.Schema.Types.ObjectId],
-	comments: [mongoose.Schema.Types.ObjectId],
-	coupons: [mongoose.Schema.Types.ObjectId],
+	bucket: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	}],
+	tastes: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Taste",
+	}],
+	likes: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Product",
+	}],
+	comments: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Comment",
+	}],
+	coupons: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Coupon",
+	}],
 	cnt_reviewable: {
 		type: Number,
 		default: 0,

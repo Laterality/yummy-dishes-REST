@@ -11,7 +11,6 @@ export const router = express.Router();
 // use native promise
 (mongoose as any).Promise = global.Promise;
 
-router
 /**
  * User creation API
  * 
@@ -38,7 +37,7 @@ router
  * @body message string optional reason of failure if error
  * @body user User optional registered user information if request succeed, or undefined
  */
-.post("/register", async (req: express.Request, res: express.Response) => {
+export async function createUser(req: express.Request) {
 	const email = (req as any).body["email"];
 	const password = (req as any).body["password"];
 	const username = (req as any).body["username"];
@@ -62,10 +61,10 @@ router
 		const regexNumber = new RegExp("[0-9]+$");
 		if (!regexNumber.test(phoneNumber)){
 			// if phone number has non-number character
-			return resHandler.responseWithJson(res, 405, {
-				result: "fail",
-				message: "phone number must have only numbers",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"invalid parameters");
 		}
 
 		const duplRes = await model.UserModel.findOne({
@@ -78,10 +77,10 @@ router
 		console.log("duplRes: ", duplRes);
 		
 		if (duplRes) {
-			return resHandler.responseWithJson(res, 409, {
-				result: "fail",
-				message: "email or username duplicates",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_CONFLICT,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"email or username duplicates");
 		}
 
 		const nativeLogin = loginType === "native";
@@ -105,23 +104,28 @@ router
 		try{
 			const execUser = await newUser.save();
 			console.log("[mongodb] new User saved");
-			return resHandler.responseWithJson(res, 201, {
-				result: "ok",
-				user: {
-					_id: (execUser as any)["_id"],
-					email: (execUser as any)["eamil"],
-					username: (execUser as any)["username"],
-					login_type: (execUser as any)["login_type"],
-					phone_number: (execUser as any)["phone_number"],
-				},
-			});
+
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_CREATED,
+				resHandler.ApiResponse.RESULT_OK,
+				"",
+				{
+					name: "user",
+					obj: {
+						_id: (execUser as any)["_id"],
+						email: (execUser as any)["eamil"],
+						username: (execUser as any)["username"],
+						login_type: (execUser as any)["login_type"],
+						phone_number: (execUser as any)["phone_number"],
+					},
+				});
 		}
 		catch (err){
 			console.log("[mongodb] user saving error", err);
-			return resHandler.responseWithJson(res, 500, {
-				result: "error",
-				message: "server fault",
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_SERVER_FAULT,
+				resHandler.ApiResponse.RESULT_ERROR,
+				"server fault");
 		}
 	}
 	else {
@@ -133,12 +137,12 @@ router
 		typeof phone_number: ${typeof phoneNumber},\n
 		typeof age: ${typeof age}}
 		typeof device_id: ${typeof deviceId}`);
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			error: "invalid parameters",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
 	}
-})
+}
 
 /**
  * User login API
@@ -165,12 +169,12 @@ router
  * @body message string optional message about result
  * @body user User optional user information if login succeed
  */
-.post("/login", async (req: express.Request, res: express.Response) => {
-	const email = (req as any).body["email"];
-	const rawPassword = (req as any).body["password"];
-	const accessToken = (req as any).body["access_token"];
-	const loginType = (req as any).body["login_type"];
-	const nativeLogin = loginType === "native";
+export async function loginUser(req: express.Request) {
+	const email			= (req as any).body["email"];
+	const rawPassword	= (req as any).body["password"];
+	const accessToken	= (req as any).body["access_token"];
+	const loginType		= (req as any).body["login_type"];
+	const nativeLogin	= loginType === "native";
 
 	if (typeof email === "string" &&
 		typeof rawPassword === "string" &&
@@ -181,60 +185,65 @@ router
 			if (!user && loginType === "google") {
 				// use login with google but account for service not exists
 				// respond to user sign up
-				return resHandler.responseWithJson(res, 200, {
-					result: "ok",
-					message: "redirect to sign up",
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_OK,
+					resHandler.ApiResponse.RESULT_OK,
+					"redirect to sign up");
 			}
 			else if (!user) {
 				console.log("user not found, email: " + email);
 
-				return resHandler.responseWithJson(res, 404, {
-					result: "fail",
-					message: "email or password incorrect",
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_NOT_FOUND,
+					resHandler.ApiResponse.RESULT_FAIL,
+					"email or password incorrect");
 			}
 
 			if ((nativeLogin && bcrypt.compareSync(rawPassword, (user as any)["password"])) ||
 			(user as any)["login_type"] === loginType && (user as any)["access_token"] === accessToken) {
 				// login success
 				const auser = user as any;
-				return resHandler.responseWithJson(res, 201, {
-					result: "ok",
-					user: {
-						_id: auser["_id"],
-						email: auser["email"],
-						username: auser["username"],
-						login_type: auser["login_type"],
-						accept_push: auser["accept_push"],
-						bucket: auser["bucket"],
-						tastes: auser["tastes"],
-					},
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_CREATED,
+					resHandler.ApiResponse.RESULT_OK,
+					"",
+					{
+						name: "user",
+						obj: {
+							_id: auser["_id"],
+							email: auser["email"],
+							username: auser["username"],
+							login_type: auser["login_type"],
+							accept_push: auser["accept_push"],
+							bucket: auser["bucket"],
+							tastes: auser["tastes"],
+						},
+					});
 			}
 			else {
 				// login fail (password incorrect)
-				return resHandler.responseWithJson(res, 404, {
-					result: "fail",
-					message: "email or password incorrect",
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_NOT_FOUND,
+					resHandler.ApiResponse.RESULT_FAIL,
+					"email or password incorrect");
 			}
 		}
 		catch (err) {
 			console.log("[api] user login error", err);
-			return resHandler.responseWithJson(res, 500, {
-				result: "error",
-				message: "server fault",
-			});
+
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_SERVER_FAULT,
+				resHandler.ApiResponse.RESULT_ERROR,
+				"server fault");
 		}
 	}
 	else {
-		return resHandler.responseWithJson(res, 405, {
-			result: "error",
-			message: "invalid parameters",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"invalid parameters");
 	}
-})
+}
 
 /**
  * User retrieval API
@@ -259,10 +268,10 @@ router
  * @body user User optional information of retrived user if succeed
  * 
  */
-.get("/:id", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).params["id"];
+export async function retrieveUser(req: express.Request, userId: string) {
+	const id	= userId; // (req as any).params["id"];
 	// console.log("[api] retrieve user, _id: " + id);
-	const q = (req as any).query["q"];
+	const q		= (req as any).query["q"];
 
 	const queries: string[] = q ? q.split(",") : [];
 	
@@ -288,7 +297,7 @@ router
 
 			// default result
 			const queryResult: any = {
-				_id: user["user"],
+				_id: user["_id"],
 				email: user["email"],
 				username: user["username"],
 			};
@@ -336,28 +345,34 @@ router
 				queryResult["tastes"] = user["tastes"];
 			}
 
-			return resHandler.responseWithJson(res, 200, {
-				result: "ok",
-				user: queryResult,
-			});
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_OK,
+				resHandler.ApiResponse.RESULT_OK,
+				"",
+				{
+					name: "user",
+					obj: queryResult,
+				});
 		}
 		else{
 			// if not found
-			console.log("[mongodb] user nt found, _id: " + id);
-			return resHandler.responseWithJson(res, 404, {
-				result: "fail",
-				message: "not found",
-			});
+			console.log("[mongodb] user not found, _id: " + id);
+
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"not found");
 		}
 	}
 	catch (err){
 		console.log("[mongodb] user retrival error", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			message: "server fault",
-		});
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
-})
+}
 
 /**
  * User information update API
@@ -368,6 +383,7 @@ router
  * Request
  * @param id string "_id" filed of user
  * 
+ * @body email string optional email to update
  * @body username string optional username to update
  * @body device_id string optional device id to update
  * @body cnt_stamp number optional count of stamp
@@ -381,12 +397,15 @@ router
  * @body result string required result of request ["ok", "fail", "error"]
  * @body message string optional message about result if fail or error
  */
-.put("/:id/update", async (req: express.Request, res: express.Response) => {
-	const id = (req as any).params["id"];
-	const username = (req as any).body["username"];
-	const deviceId = (req as any).body["device_id"];
-	const cntStamp = (req as any).body["cnt_stamp"];
-	const acceptPush = (req as any).body["accept_push"];
+export async function updateUser(req: express.Request, userId: string) {
+	const id			= userId; // (req as any).params["id"];
+	const dirtyEmail	= (req as any).body["email"];
+	const username		= (req as any).body["username"];
+	const deviceId		= (req as any).body["device_id"];
+	const cntStamp		= (req as any).body["cnt_stamp"];
+	const acceptPush	= (req as any).body["accept_push"];
+
+	const email = dirtyEmail ? (dirtyEmail as string).toLowerCase() : undefined;
 	
 	try{
 		// check if user exists
@@ -394,24 +413,37 @@ router
 		if (!userExist) {
 			// if user not found
 			console.log("[mongodb] user not found, _id: " + id);
-			return resHandler.responseWithJson(res, 404, {
-				result: "fail",
-				message: "user not found",
-			});
+
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"user not found");
 		}
 
-		// check if username duplicated
+		// check if email duplicates
+		if (email) {
+			if (await model.UserModel.findOne({email}).exec()) {
+				// email duplicates
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_CONFLICT,
+					resHandler.ApiResponse.RESULT_FAIL,
+					"email duplicates");
+			}
+		}
+
+		// check if username duplicates
 		if (username) {
 			if (await model.UserModel.findOne({username}).exec()) {
 				// username duplicates
-				return resHandler.responseWithJson(res, 409, {
-					result: "fail",
-					message: "username duplicates",
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_CONFLICT,
+					resHandler.ApiResponse.RESULT_FAIL,
+					"username duplicates");
 			}
 		}
 
 		const update: any = {};
+		if (email) { update["email"] = email; }
 		if (username) { update["username"] = username; }
 		if (deviceId) { update["deviceid"] = deviceId; }
 		if (cntStamp) { update["cnt_stamp"] = cntStamp; }
@@ -424,22 +456,24 @@ router
 
 		const result = await userExist.update(update).exec();
 
-		console.log("[mongodb] update result", result);
+		// console.log("[mongodb] update result", result);
 
-		console.log("[mongodb] username updated, username: " + username);
-		return resHandler.responseWithJson(res, 200, {
-			result: "ok",
-		});
+		// console.log("[mongodb] username updated, username: " + username);
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK);
 	}
 	catch (err) {
 		console.log("[mongodb] retrieve user by username error", err);
-		return resHandler.responseWithJson(res, 500, {
-			result: "error",
-			error: "server fault",
-		});
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
 
-})
+}
 
 /**
  * Duplication check API
@@ -458,7 +492,7 @@ router
  * @body message string required result of check if request succeed ["duplicates", "not duplicates"], 
  * or message about result if not
  */
-.get("/is/duplicates", async (req: express.Request, res: express.Response) => {
+export async function duplicateCheck(req: express.Request) {
 	const where = (req as any).query["where"];
 	const value = (req as any).query["value"];
 
@@ -471,16 +505,16 @@ router
 					const result = await model.UserModel.findOne({email: value}).exec();
 					if (!result) {
 						// if not duplicates
-						return resHandler.responseWithJson(res, 200, {
-							result: "ok",
-							message: "not duplicates",
-						});
+						return new resHandler.ApiResponse(
+							resHandler.ApiResponse.CODE_OK,
+							resHandler.ApiResponse.RESULT_OK,
+							"not duplicates");
 					}
 					else {
-						return resHandler.responseWithJson(res, 200, {
-							result: "ok",
-							message: "duplicates",
-						});
+						return new resHandler.ApiResponse(
+							resHandler.ApiResponse.CODE_OK,
+							resHandler.ApiResponse.RESULT_OK,
+							"duplicates");
 					}
 				}
 				else if (where === "username") {
@@ -488,36 +522,78 @@ router
 					const result = await model.UserModel.findOne({username: value}).exec();
 					if (!result) {
 						// if not duplicates
-						return resHandler.responseWithJson(res, 200, {
-							result: "ok",
-							message: "not duplicates",
-						});
+						return new resHandler.ApiResponse(
+							resHandler.ApiResponse.CODE_OK,
+							resHandler.ApiResponse.RESULT_OK,
+							"not duplicates");
 					}
 					else {
-						return resHandler.responseWithJson(res, 200, {
-							result: "ok",
-							message: "duplicates",
-						});
+						return new resHandler.ApiResponse(
+							resHandler.ApiResponse.CODE_OK,
+							resHandler.ApiResponse.RESULT_OK,
+							"duplicates");
 					}
 				}
 				else {
-					return resHandler.responseWithJson(res, 405, {
-						result: "fail",
-						message: "invalid parameter",
-					});
+					return new resHandler.ApiResponse(
+						resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+						resHandler.ApiResponse.RESULT_FAIL,
+						"invalid parameter");
 				}
 			}
 			catch (err) {
-				return resHandler.responseWithJson(res, 500, {
-					result: "error",
-					message: "server fault",
-				});
+				return new resHandler.ApiResponse(
+					resHandler.ApiResponse.CODE_SERVER_FAULT,
+					resHandler.ApiResponse.RESULT_ERROR,
+					"server fault");
 			}
 	}
 	else {
-		return resHandler.responseWithJson(res, 405, {
-			result: "fail",
-			message: "invalid parameter",
-		});
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
 	}
-});
+}
+
+/**
+ * User delete API
+ * 
+ * Path: /{userId}/delete
+ * Method: DELETE
+ * 
+ * Request
+ * @param userId string required "_id" field of user
+ * 
+ * Response
+ * @body result string required result of request
+ * @body message string optional message about result
+ */
+export async function deleteUser(req: express.Request, userId: string) {
+	
+	try {
+		const result = await model.UserModel.findById(userId).exec();
+
+		if (!result) {
+			console.log("[api] user not found, _id: " + userId);
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"user not found");
+		}
+
+		await result.remove();
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK);
+	}
+	catch (err) {
+		console.log("[api] user deletion error,\n", err);
+		
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
+	}
+}

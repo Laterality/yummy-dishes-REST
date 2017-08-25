@@ -19,7 +19,7 @@ export function responseWithJson(res: express.Response, code: number, body: any)
 }
 
 export function response(res: express.Response, apiRes: ApiResponse|undefined) {
-	console.log("[api] api response: \n", apiRes);
+	// console.log("[api] api response: \n", apiRes);
 	if (apiRes) {
 		res.type("application/json")
 		.status(apiRes.getCode())
@@ -46,6 +46,7 @@ export class ApiResponse {
 	public static readonly CODE_CREATED = 201;
 	public static readonly CODE_NOT_FOUND = 404;
 	public static readonly CODE_INVALID_PARAMETERS = 405;
+	public static readonly CODE_CONFLICT = 409;
 	public static readonly CODE_SERVER_FAULT = 500;
 
 	constructor(

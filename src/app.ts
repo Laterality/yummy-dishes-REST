@@ -24,7 +24,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use("/static", express.static(path.join(__dirname, config.path_public)));
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-	console.log(req.path);
 	next();
 });
 app.use(apiRouter);
