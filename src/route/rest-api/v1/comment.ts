@@ -387,7 +387,7 @@ export async function deleteComment(req: express.Request, id: string) {
 				"not found");
 		}
 
-		const authorId = product["author"];
+		const authorId = (product as any)["author"];
 		
 		await product.remove();
 
