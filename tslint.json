@@ -26,7 +26,8 @@
 		"no-trailing-whitespace": false,
 		"align": [
 			false
-		]
+		],
+		"forin": false
 	},
 	"rulesDirectory": []
 }

@@ -3,9 +3,13 @@ import * as express from "express";
 import * as fileHandler from "../../../lib/file-handler";
 import * as resHandler from "../../../lib/response-handler";
 import * as validator from "../../../lib/validator";
+
 import * as categoryApi from "./category";
+import * as commentApi from "./comment";
+import * as couponApi from "./coupon";
 import * as imageApi from "./image";
 import * as productApi from "./product";
+import * as tasteApi from "./taste";
 import * as userApi from "./user";
 
 export const router = express.Router();
@@ -38,6 +42,9 @@ router.use(async (req: express.Request, res: express.Response, next: express.Nex
 						break;
 					case "delete":
 						apiRes = await userApi.deleteUser(req, p1);
+						break;
+					case "coupons":
+						apiRes = await couponApi.retrieveCouponsByUser(req, p1);
 						break;
 				}
 				break;
@@ -130,6 +137,10 @@ async (req: express.Request, res: express.Response, next: express.NextFunction) 
 							apiRes = await productApi.deleteProduct(req, p1);
 						}
 						break;
+					case "comments":
+						if (validator.isObjectid(p1)) {
+							apiRes = await commentApi.retrieveCommentsByProduct(req, p1);
+						}
 					default:
 						break;
 				}
@@ -221,7 +232,192 @@ async (req: express.Request, res: express.Response, next: express.NextFunction) 
 			case "categories":
 				apiRes = await categoryApi.retrieveCategories(req);
 				break;
-			
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/comment/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+	const p2 = (req as any).params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default:
+				switch (p2) {
+					case "reply":
+						if (validator.isObjectid(p1)) {
+							apiRes = await commentApi.createReply(p1, req);
+						}
+						break;
+
+					// comment by product routed by /product route
+
+					case "update":
+						if (validator.isObjectid(p1)) {
+							apiRes = await commentApi.updateComment(req, p1);
+						}
+						break;
+					case "delete":
+						if (validator.isObjectid(p1)) {
+							apiRes = await commentApi.deleteComment(req, p1);
+						}
+						break;
+				}
+			break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/comment/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await commentApi.createComment(req);
+				break;
+			default:
+				if (validator.isObjectid(p1)) {
+					apiRes = await commentApi.retrieveComment(req, p1);
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/coupon/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+	const p2 = (req as any).params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default:
+				switch (p2) {
+					// /{userId}/coupons routes in /user route
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) {resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/coupon/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+	
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await couponApi.createCoupon(req);
+				break;
+			case "by-coupon-number":
+				apiRes = await couponApi.retrieveCouponByCouponNumber(req);
+				break;
+			case "consume":
+				apiRes = await couponApi.consumeCoupon(req);
+				break;
+			case "delete":
+				apiRes = await couponApi.deleteCouponByCouponNumber(req);
+				break;
+			default:
+				console.log("[api] not matched route");
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/taste/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+	const p2 = (req as any).params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default:
+				switch (p2) {
+					case "update":
+						if (validator.isObjectid(p1)) {
+							apiRes = await tasteApi.updateTaste(req, p1);
+						}
+						break;
+					case "delete":
+						if (validator.isObjectid(p1)) {
+							apiRes = await tasteApi.deleteTaste(req, p1);
+						}
+						break;
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/taste/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = (req as any).params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await tasteApi.createTaste(req);
+				break;
+			case "tastes":
+				apiRes = await tasteApi.retrieveTastes();
+				break;
+			default:
+				if (validator.isObjectid(p1)) {
+					apiRes = await tasteApi.retrieveTaste(req, p1);
+				}
+				break;
 		}
 	}
 	catch (err) {

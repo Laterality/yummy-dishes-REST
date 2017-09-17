@@ -11,6 +11,6 @@ export const config = {
 	},
 	path_public: "out/public",
 	test: {
-		baseurl: "https://apps.latera.kr/yd/api/v1",
+		baseurl: "BASE_URL",
 	},
 };

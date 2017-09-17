@@ -21,9 +21,9 @@ export async function retrieveCategoriesExample(): Promise<any> {
 	}).promise();
 }
 
-export async function retrieveProductsByCategory(cat: any): Promise<any> {
+export async function retrieveProductsByCategory(catId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/category/${cat["_id"]}/products`,
+		uri: config.test.baseurl + `/category/${catId}/products`,
 		method: "GET",
 		qs: {
 			q: "amount,contents",
@@ -32,9 +32,9 @@ export async function retrieveProductsByCategory(cat: any): Promise<any> {
 	}).promise();
 }
 
-export async function updateCategoryExample(cat: any): Promise<any> {
+export async function updateCategoryExample(catId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/category/${cat["_id"]}/update`,
+		uri: config.test.baseurl + `/category/${catId}/update`,
 		method: "PUT",
 		body: {
 			name: "changedTestCategory",
@@ -43,15 +43,15 @@ export async function updateCategoryExample(cat: any): Promise<any> {
 	}).promise();
 }
 
-export async function deleteCategoryExample(cat: any): Promise<any> {
+export async function deleteCategoryExample(catId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/category/${cat["_id"]}/delete`,
+		uri: config.test.baseurl + `/category/${catId}/delete`,
 		method: "DELETE",
 		json: true,
 	}).promise();
 }
 
-export async function createProductExample(cat: any): Promise<any> {
+export async function createProductExample(catId: string): Promise<any> {
 	return request({
 		uri: config.test.baseurl + "/product/register",
 		body: {
@@ -63,16 +63,16 @@ export async function createProductExample(cat: any): Promise<any> {
 				"some contents",
 				"ipsum lorem",
 			],
-			category: cat["_id"],
+			category: catId,
 			image_ids: [],
 		},
 		json: true,
 	}).promise();
 }
 
-export async function retrieveProductExample(prod: any): Promise<any> {
+export async function retrieveProductExample(productId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/product/${prod["_id"]}`,
+		uri: config.test.baseurl + `/product/${productId}`,
 		method: "GET",
 		qs: {
 			q: "amount,contents",
@@ -81,9 +81,9 @@ export async function retrieveProductExample(prod: any): Promise<any> {
 	}).promise();
 }
 
-export async function updateProductExample(prod: any): Promise<any> {
+export async function updateProductExample(productId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/product/${prod["_id"]}/update`,
+		uri: config.test.baseurl + `/product/${productId}/update`,
 		method: "PUT",
 		body: {
 			name: "changed product name",
@@ -93,9 +93,9 @@ export async function updateProductExample(prod: any): Promise<any> {
 	}).promise();
 }
 
-export async function deleteProductExample(prod: any): Promise<any> {
+export async function deleteProductExample(productId: string): Promise<any> {
 	return request({
-		uri: config.test.baseurl + `/product/${prod["_id"]}/delete`,
+		uri: config.test.baseurl + `/product/${productId}/delete`,
 		method: "DELETE",
 		json: true,
 	}).promise();

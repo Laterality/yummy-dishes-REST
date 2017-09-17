@@ -26,10 +26,10 @@ export async function createUserExample(): Promise<any> {
 	}
 }
 
-export async function retrieveUserExmaple(user: any): Promise<any> {
+export async function retrieveUserExmaple(userId: string): Promise<any> {
 	try {
 		return request({
-			uri: config.test.baseurl + `/user/${user["_id"]}`,
+			uri: config.test.baseurl + `/user/${userId}`,
 			method: "GET",
 			qs: {
 				q: "phone_number,date_reg",
@@ -64,10 +64,10 @@ export async function loginUserExample(): Promise<any> {
 	}
 }
 
-export async function updateUserExample(user: any): Promise<any> {
+export async function updateUserExample(userId: string): Promise<any> {
 	try {
 		return await request({
-			uri: config.test.baseurl + `/user/${user["_id"]}/update`,
+			uri: config.test.baseurl + `/user/${userId}/update`,
 			method: "PUT",
 			body: {
 				email: "changed@mail.com",
@@ -82,10 +82,10 @@ export async function updateUserExample(user: any): Promise<any> {
 	}
 }
 
-export async function deleteUserExample(user: any): Promise<any> {
+export async function deleteUserExample(userId: string): Promise<any> {
 	try {
 		return await request({
-			uri: config.test.baseurl + `/user/${user["_id"]}/delete`,
+			uri: config.test.baseurl + `/user/${userId}/delete`,
 			method: "DELETE",
 			json: true,
 		}).promise();

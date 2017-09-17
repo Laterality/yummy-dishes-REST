@@ -22,7 +22,7 @@ import * as validator from "../../../lib/validator";
  * @body amount string required amount of product
  * @body ingredient string required ingredients of product
  * @body category string(ObjectId) required "_id" field of category
- * @body content string[] text contents
+ * @body contents string[] text contents
  * @body image_ids string[] optional array of id of image of product
  * 
  * Response

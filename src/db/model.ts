@@ -69,7 +69,7 @@ export const ProductModel = mongoose.model("Product", new mongoose.Schema({
 	ingredient: "text",
 }));
 
-export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
+export const SaleInfoModel = mongoose.model("SaleInfo", new mongoose.Schema({
 	date_sale: {
 		type: Date,
 		default: Date.now,
@@ -94,7 +94,7 @@ export const SaleInfo = mongoose.model("SaleInfo", new mongoose.Schema({
 	},
 }));
 
-export const Comment = mongoose.model("Comment", new mongoose.Schema({
+export const CommentModel = mongoose.model("Comment", new mongoose.Schema({
 	author: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
@@ -109,7 +109,7 @@ export const Comment = mongoose.model("Comment", new mongoose.Schema({
 	},
 	rate: {
 		type: Number,
-		min: 0,
+		min: 1,
 		max: 5,
 	},
 	tastes: [{
@@ -122,6 +122,15 @@ export const Comment = mongoose.model("Comment", new mongoose.Schema({
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "Image",
 		}],
+	},
+	reply : {
+		content: {
+			type: String,
+		},
+		author: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "User",
+		},
 	},
 }));
 
@@ -151,11 +160,14 @@ export const OrderModel = mongoose.model("Order", new mongoose.Schema({
 }));
 
 export const TasteModel = mongoose.model("Taste", new mongoose.Schema({
-	text: String,
+	title: String,
 }));
 
 export const CouponModel = mongoose.model("Coupon", new mongoose.Schema({
-	coupon_num: Number,
+	coupon_num: {
+		type: String,
+		unique: true,
+	},
 	date_reg: {
 		type: Date,
 		default: Date.now,
@@ -163,6 +175,10 @@ export const CouponModel = mongoose.model("Coupon", new mongoose.Schema({
 	date_expiration: Date,
 	message: String,
 	available: Boolean,
+	owner: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
 }));
 
 export const UserModel = mongoose.model("User", new mongoose.Schema({

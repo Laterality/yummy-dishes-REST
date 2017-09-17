@@ -18,7 +18,7 @@ describe("User REST API Test", () => {
 
 	// duplicate test
 
-	it("user creation API", (done) => {
+	it("1. Create User", (done) => {
 		examples.createUserExample()
 		.then((response: any) => {
 			createdUser = response["user"];
@@ -28,8 +28,8 @@ describe("User REST API Test", () => {
 		});
 	});
 
-	it("user retrieve API", (done) => {
-		examples.retrieveUserExmaple(createdUser)
+	it("2. Retrieve User", (done) => {
+		examples.retrieveUserExmaple(createdUser["_id"])
 		.then((response: any) => {
 			// console.log("[test] retirved user response: \n", response);
 			chai.expect(response["user"]["_id"]).to.equal(createdUser["_id"]);
@@ -37,7 +37,7 @@ describe("User REST API Test", () => {
 		});
 	});
 
-	it("user duplication API - duplicated", (done) => {
+	it("3. Check user duplication - should duplicated", (done) => {
 		examples.duplicateCheckExample()
 		.then((response: any) => {
 			chai.expect(response["message"]).to.equal("duplicates");
@@ -45,7 +45,7 @@ describe("User REST API Test", () => {
 		});
 	});
 
-	it("user login API", (done) => {
+	it("4. Sign in User", (done) => {
 		examples.loginUserExample()
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -53,15 +53,15 @@ describe("User REST API Test", () => {
 		});
 	});
 
-	it("user update API", (done) => {
-		examples.updateUserExample(createdUser)
+	it("5. Update User", (done) => {
+		examples.updateUserExample(createdUser["_id"])
 		.then((response) => {
 			chai.expect(response["result"]).to.equal("ok");
 			done();
 		});
 	});
 
-	it("user duplication API - not duplicated", (done) => {
+	it("6. Check user duplication - should not duplicated", (done) => {
 		examples.duplicateCheckExample()
 		.then((response: any) => {
 			chai.expect(response["message"]).to.equal("not duplicates");
@@ -69,26 +69,18 @@ describe("User REST API Test", () => {
 		});
 	});
 
-	it("user deletion API", (done) => {
-		examples.deleteUserExample(createdUser)
+	it("7. Delete User", (done) => {
+		examples.deleteUserExample(createdUser["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
-			done();
+
+			examples.retrieveUserExmaple(createdUser["_id"])
+			.catch((err: any) => {
+				chai.expect(err.statusCode).to.equal(404);
+				chai.expect(err.error["message"]).to.equal("not found");
+				done();
+			});
 		});
 	});
 
-	// retrieve test
-	// duplicates test
-	it("user retrieve API", (done) => {
-		examples.retrieveUserExmaple(createdUser)
-		.then((response: any) => {
-			chai.expect(response["message"]).to.equal("not found");
-			done();
-		})
-		.catch((err: any) => {
-			chai.expect(err.statusCode).to.equal(404);
-			chai.expect(err.error["message"]).to.equal("not found");
-			done();
-		});
-	});
 });

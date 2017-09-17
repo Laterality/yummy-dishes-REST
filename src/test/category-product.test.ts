@@ -9,7 +9,7 @@ describe(("Category and Product REST API Test"), () => {
 	let createdCategory: any;
 	let createdProduct: any;
 
-	it("category creation API", (done: any) => {
+	it("1. Create Category", (done: any) => {
 		examples.createCategoryExample()
 		.then((response: any) => {
 			createdCategory = response["category"];
@@ -18,7 +18,7 @@ describe(("Category and Product REST API Test"), () => {
 		});
 	});
 
-	it("category list retrieval API", (done: any) => {
+	it("2. Retrieve Category", (done: any) => {
 		examples.retrieveCategoriesExample()
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -32,31 +32,28 @@ describe(("Category and Product REST API Test"), () => {
 		});
 	});
 
-	it("category update API", (done: any) => {
-		examples.updateCategoryExample(createdCategory)
+	it("3. Update Category", (done: any) => {
+		examples.updateCategoryExample(createdCategory["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
 			createdCategory["name"] = "changedTestCategory";
-			done();
+			
+			examples.retrieveCategoriesExample()
+			.then((retrieveResponse: any) => {
+				chai.expect(retrieveResponse["result"]).to.equal("ok");
+				// chai.expect(retrieveResponse["categories"]).to.contain(createdCategory);
+				chai.assert((retrieveResponse["categories"] as any[])
+				.find((obj: any, index: number, arr: any[]): boolean => {
+					return obj["_id"] === createdCategory["_id"] &&
+						obj["name"] === createdCategory["name"];
+				}));
+				done();
+			});
 		});
 	});
 
-	it("check updated category", (done: any) => {
-		examples.retrieveCategoriesExample()
-		.then((response: any) => {
-			chai.expect(response["result"]).to.equal("ok");
-			// chai.expect(response["categories"]).to.contain(createdCategory);
-			chai.assert((response["categories"] as any[])
-			.find((obj: any, index: number, arr: any[]): boolean => {
-				return obj["_id"] === createdCategory["_id"] &&
-					obj["name"] === createdCategory["name"];
-			}));
-			done();
-		});
-	});
-
-	it("production creation API", (done: any) => {
-		examples.createProductExample(createdCategory)
+	it("4. Create Product", (done: any) => {
+		examples.createProductExample(createdCategory["_id"])
 		.then((response: any) => {
 			createdProduct = response["product"];
 			chai.expect(response["result"]).to.equal("ok");
@@ -65,8 +62,8 @@ describe(("Category and Product REST API Test"), () => {
 		});
 	});
 
-	it("check product inclusion", (done: any) => {
-		examples.retrieveProductsByCategory(createdCategory)
+	it("5. Check if Product included in category", (done: any) => {
+		examples.retrieveProductsByCategory(createdCategory["_id"])
 		.then((response: any) => {
 			chai.assert((response["category"]["products"] as any[])
 			.find((obj: any, index: number, arr: any[]): boolean => {
@@ -76,59 +73,51 @@ describe(("Category and Product REST API Test"), () => {
 		});
 	});
 
-	it("product retrieval API", (done: any) => {
-		examples.retrieveProductExample(createdProduct)
+	it("6. Retrieve Product", (done: any) => {
+		examples.retrieveProductExample(createdProduct["_id"])
 		.then((response: any) => {
 			chai.expect(response["product"]["_id"]).to.equal(createdProduct["_id"]);
 			done();
 		});
 	});
 
-	it("product update API", (done: any) => {
-		examples.updateProductExample(createdProduct)
+	it("7. Update Product", (done: any) => {
+		examples.updateProductExample(createdProduct["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
-			done();
+
+			examples.retrieveProductExample(createdProduct["_id"])
+			.then((retrieveResponse: any) => {
+				chai.expect(retrieveResponse["product"]["name"]).not.to.equal(createdProduct["name"]);
+				done();
+			});
 		});
 	});
 
-	it("check updated product", (done: any) => {
-		examples.retrieveProductExample(createdProduct)
-		.then((response: any) => {
-			chai.expect(response["product"]["name"]).not.to.equal(createdProduct["name"]);
-			done();
-		});
-	});
-
-	it("product deletion API", (done: any) => {
-		examples.deleteProductExample(createdProduct)
+	it("8. Delete Product", (done: any) => {
+		examples.deleteProductExample(createdProduct["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
-			done();
+
+			examples.retrieveProductExample(createdProduct["_id"])
+			.catch((err: any) => {
+				chai.expect(err.statusCode).to.equal(404);
+				done();
+			});
 		});
 	});
 
-	it("check product deleted from category", (done: any) => {
-		examples.retrieveProductExample(createdProduct)
-		.catch((err: any) => {
-			chai.expect(err.statusCode).to.equal(404);
-			done();
-		});
-	});
-
-	it("product deletion API", (done: any) => {
-		examples.deleteCategoryExample(createdCategory)
+	it("9. Delete category", (done: any) => {
+		examples.deleteCategoryExample(createdCategory["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
-			done();
+
+			examples.retrieveProductsByCategory(createdCategory["_id"])
+			.catch((err: any) => {
+				chai.expect(err.statusCode).to.equal(404);
+				done();
+			});
 		});
 	});
 
-	it("check category deleted", (done: any) => {
-		examples.retrieveProductsByCategory(createdCategory)
-		.catch((err: any) => {
-			chai.expect(err.statusCode).to.equal(404);
-			done();
-		});
-	});
 });

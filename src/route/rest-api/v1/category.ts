@@ -285,5 +285,9 @@ export async function deleteCategory(req: express.Request, categoryId: string) {
 	}
 	catch (err) {
 		console.log("[api] category delete error ", err); 
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
 	}
 }
