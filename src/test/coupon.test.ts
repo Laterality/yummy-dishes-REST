@@ -14,28 +14,25 @@ chai.use(chaiAsPromised);
 /**
  * Test Scenario:
  * 
- * 1. create user to be owner of coupon
- * 2. create coupon with user as a owner
- * 3. retrieve coupon by coupon number - check if the coupon retrieved
- * 4. retreive coupon by user - check includes the coupon
- * 5. consume coupon
- * 6. delete coupon
- * 7. delete user
+ * 1. create coupon with user as a owner
+ * 2. retrieve coupon by coupon number - check if the coupon retrieved
+ * 3. retreive coupon by user - check includes the coupon
+ * 4. consume coupon
+ * 5. delete coupon
  */
 describe("Coupon REST API Test", () => {
 	let user: any;
 	let cpn: any;
 
-	it("1. Create user to be owner", (done) => {
+	before((done: any) => {
 		xmplUser.createUserExample()
 		.then((response: any) => {
-			chai.expect(response["result"]).to.equal("ok");
 			user = response["user"];
 			done();
 		});
 	});
 
-	it("2. Create coupon", (done) =>
+	it("1. Create coupon", (done) =>
 	{
 		xmplCoupon.createCouponExample(user["_id"])
 		.then((response: any) => {
@@ -45,7 +42,7 @@ describe("Coupon REST API Test", () => {
 		});
 	});
 
-	it("3. Retrieve coupon with coupon number", (done) => {
+	it("2. Retrieve coupon with coupon number", (done) => {
 		xmplCoupon.retrieveCouponByCouponNumber(cpn["coupon_num"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -54,7 +51,7 @@ describe("Coupon REST API Test", () => {
 		});
 	});
 
-	it("4. Retrieve coupon with user id", (done) => {
+	it("3. Retrieve coupon with user id", (done) => {
 		xmplCoupon.retrieveCouponsByUser(user["_id"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -68,7 +65,7 @@ describe("Coupon REST API Test", () => {
 		});
 	});
 
-	it("5. Consume coupon", (done) => {
+	it("4. Consume coupon", (done) => {
 		xmplCoupon.consumeCoupon(cpn["coupon_num"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -82,7 +79,7 @@ describe("Coupon REST API Test", () => {
 		});
 	});
 
-	it("6. Delete coupon", (done) => {
+	it("5. Delete coupon", (done) => {
 		xmplCoupon.deleteCoupon(cpn["coupon_num"])
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
@@ -96,10 +93,9 @@ describe("Coupon REST API Test", () => {
 		});
 	});
 
-	it("7. Delete user", (done) => {
+	after((done: any) => {
 		xmplUser.deleteUserExample(user["_id"])
 		.then((response) => {
-			chai.expect(response["result"]).to.equal("ok");
 			done();
 		});
 	});

@@ -35,7 +35,8 @@ export async function fileHandler(file: any) {
 		const separatedFilename = originalName.split(".");
 		const ext = separatedFilename[separatedFilename.length - 1];
 		// rename file with extension
-		const rename = file.path + "." + ext;
+		// const rename = file.path + "." + ext;
+		const rename = path.join(config.path_public, file.filename + "." + ext);
 		const filenameRenamed = file.filename + "." + ext;
 		console.log(`[api] renaming with ext. ${ext}`);
 		// check if the file extensions is supported

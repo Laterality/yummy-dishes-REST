@@ -284,7 +284,7 @@ export async function retrieveUser(req: express.Request, userId: string) {
 		.populate("comments product", "name")
 		.populate("comments tastes", "text");
 		query = queries.indexOf("coupons") > -1 ? query : query.populate("coupons");
-		query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket");
+		query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket.product");
 		query = queries.indexOf("tastes") > -1 ? query : query.populate("tastes");
 	}
 

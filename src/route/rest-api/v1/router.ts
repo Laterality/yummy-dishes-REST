@@ -4,10 +4,13 @@ import * as fileHandler from "../../../lib/file-handler";
 import * as resHandler from "../../../lib/response-handler";
 import * as validator from "../../../lib/validator";
 
+import * as bucketApi from "./bucket";
 import * as categoryApi from "./category";
 import * as commentApi from "./comment";
 import * as couponApi from "./coupon";
 import * as imageApi from "./image";
+import * as likeApi from "./like";
+import * as orderApi from "./order";
 import * as productApi from "./product";
 import * as tasteApi from "./taste";
 import * as userApi from "./user";
@@ -45,6 +48,24 @@ router.use(async (req: express.Request, res: express.Response, next: express.Nex
 						break;
 					case "coupons":
 						apiRes = await couponApi.retrieveCouponsByUser(req, p1);
+						break;
+					case "like":
+						apiRes = await likeApi.likeProduct(req, p1);
+						break;
+					case "unlike":
+						apiRes = await likeApi.unlikeProduct(req, p1);
+						break;
+					case "add-bucket":
+						apiRes = await bucketApi.addBucketItem(req, p1);
+						break;
+					case "update-bucket":
+						apiRes = await bucketApi.updateBucketItem(req, p1);
+						break;
+					case "delete-from-bucket":
+						apiRes = await bucketApi.deleteBucketItem(req, p1);
+						break;
+					case "orders":
+						apiRes = await orderApi.retrieveOrderByUser(req, p1);
 						break;
 				}
 				break;
@@ -416,6 +437,61 @@ async (req: express.Request, res: express.Response, next: express.NextFunction) 
 			default:
 				if (validator.isObjectid(p1)) {
 					apiRes = await tasteApi.retrieveTaste(req, p1);
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/order/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+	const p2 = req.params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default:
+				switch (p2) {
+					case "update":
+						apiRes = await orderApi.updateOrder(req, p1);
+						break;
+					case "delete":
+						apiRes = await orderApi.deleteOrder(req, p1);
+						break;
+				}
+			break;
+		}
+	}
+	catch (err) {
+		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/order/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await orderApi.createOrder(req);
+				break;
+			default:
+				if (validator.isObjectid(p1)) {
+					apiRes = await orderApi.retrieveOrder(req, p1);
 				}
 				break;
 		}

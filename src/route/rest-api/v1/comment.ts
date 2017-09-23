@@ -29,7 +29,7 @@ export async function createComment(req: express.Request): Promise<resHandler.Ap
 		typeof rate				!== "number" ||
 		typeof content["text"]	!== "string" ||
 		!Array.isArray(tastes)				 ||
-		Array.isArray(content["images"])) {
+		!Array.isArray(content["images"])) {
 			return new resHandler.ApiResponse(
 				resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
 				resHandler.ApiResponse.RESULT_FAIL,

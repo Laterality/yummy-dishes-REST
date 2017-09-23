@@ -32,9 +32,9 @@ export async function createReplyExample(commentId: string, authorId: string) {
 	}).promise();
 }
 
-export async function retrieveCommentExample(commentId: string) {
+export async function retrieveCommentExample(commentId: string, query?: string) {
 	return request({
-		uri: config.test.baseurl + `/comment/${commentId}?q=rate,content`,
+		uri: config.test.baseurl + `/comment/${commentId}?q=${query ? query : "rate,content"}`,
 		method: "GET",
 		json: true,
 	}).promise();
@@ -42,7 +42,7 @@ export async function retrieveCommentExample(commentId: string) {
 
 export async function retrieveCommentsByProductExample(productId: string) {
 	return request({
-		uri: config.test.baseurl + `/comment/${productId}/comments?q=rate,content`,
+		uri: config.test.baseurl + `/product/${productId}/comments?q=rate,content`,
 		method: "GET",
 		json: true,
 	}).promise();

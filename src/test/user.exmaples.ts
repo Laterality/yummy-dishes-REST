@@ -26,13 +26,13 @@ export async function createUserExample(): Promise<any> {
 	}
 }
 
-export async function retrieveUserExmaple(userId: string): Promise<any> {
+export async function retrieveUserExmaple(userId: string, query?: string): Promise<any> {
 	try {
 		return request({
 			uri: config.test.baseurl + `/user/${userId}`,
 			method: "GET",
 			qs: {
-				q: "phone_number,date_reg",
+				q: query ? query : "phone_number,date_reg",
 			},
 			json: true,
 		}).promise();

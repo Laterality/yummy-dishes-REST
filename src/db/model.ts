@@ -143,17 +143,30 @@ export const OrderModel = mongoose.model("Order", new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+	date_received: {
+		type: Date,
+	},
 	orderer: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	products: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Product",
+	products: [{
+		product: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Product",
+		},
+		quantity: {
+			type: Number,
+			default: 1,
+		},
+	}],
+	phone_number: {
+		type: String,
+		required: true,
 	},
 	state: {
 		type: String,
-		enum: ["pending", "processing", "receiving", "received", "rejected"],
+		enum: ["pending", "processing", "receiving", "received", "rejected", "cancelled"],
 	},
 	additional: String,
 	price_total: Number,
@@ -253,8 +266,13 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		},
 	},
 	bucket: [{
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Product",
+		product: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Product",
+		},
+		quantity: {
+			type: Number,
+		},
 	}],
 	tastes: [{
 		type: mongoose.Schema.Types.ObjectId,
