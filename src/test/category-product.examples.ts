@@ -70,12 +70,12 @@ export async function createProductExample(catId: string): Promise<any> {
 	}).promise();
 }
 
-export async function retrieveProductExample(productId: string): Promise<any> {
+export async function retrieveProductExample(productId: string, q?: string): Promise<any> {
 	return request({
 		uri: config.test.baseurl + `/product/${productId}`,
 		method: "GET",
 		qs: {
-			q: "amount,contents",
+			q: q ? q : "amount,contents",
 		},
 		json: true,
 	}).promise();

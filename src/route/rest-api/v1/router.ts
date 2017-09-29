@@ -10,6 +10,7 @@ import * as commentApi from "./comment";
 import * as couponApi from "./coupon";
 import * as imageApi from "./image";
 import * as likeApi from "./like";
+import * as noticeApi from "./notice";
 import * as orderApi from "./order";
 import * as productApi from "./product";
 import * as tasteApi from "./taste";
@@ -66,6 +67,9 @@ router.use(async (req: express.Request, res: express.Response, next: express.Nex
 						break;
 					case "orders":
 						apiRes = await orderApi.retrieveOrderByUser(req, p1);
+						break;
+					case "adminize":
+						apiRes = await userApi.updateUserToAdmin(req, p1);
 						break;
 				}
 				break;
@@ -498,6 +502,62 @@ async (req: express.Request, res: express.Response, next: express.NextFunction) 
 	}
 	catch (err) {
 		console.log("[api] routing error\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/notice/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+	const p2 = req.params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default:
+				switch (p2) {
+					case "update":
+						apiRes = await noticeApi.updateNotice(req, p1);
+						break;
+					case "delete":
+						apiRes = await noticeApi.deleteNotice(req, p1);
+						break;
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] error occurred while routing\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/notice/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await noticeApi.createNotice(req);
+				break;
+			case "notices":
+				apiRes = await noticeApi.retrieveNotices(req);
+				break;
+			default:
+				if (validator.isObjectid(p1)) {
+					apiRes = await noticeApi.retrieveNotice(req, p1);
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] error occurred while routing\n", err);
 	}
 
 	if (apiRes) { resHandler.response(res, apiRes); }

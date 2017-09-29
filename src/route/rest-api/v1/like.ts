@@ -5,6 +5,7 @@
  */
 import * as async from "async";
 import * as express from "express";
+import * as mongoose from "mongoose";
 
 import * as model from "../../../db/model";
 import * as resHandler from "../../../lib/response-handler";
@@ -45,7 +46,7 @@ export async function likeProduct(req: express.Request, idUser: string) {
 			return new resHandler.ApiResponse(
 				resHandler.ApiResponse.CODE_NOT_FOUND,
 				resHandler.ApiResponse.RESULT_FAIL,
-				"not found");
+				`not found${!userFound || !prodFound ? "(" : ""}${!userFound ? "user" : ""}${!userFound || !prodFound ? "," : ""}${!prodFound ? "product" : ""}${!userFound || !prodFound ? ")" : ""}`);
 		}
 
 		// check if user already liked this product
@@ -65,7 +66,12 @@ export async function likeProduct(req: express.Request, idUser: string) {
 		((prodFound as any)["cnt_like"] as number) += 1;
 
 		// save both
-		await userFound.save();
+		// await userFound.save();
+		await model.UserModel.findByIdAndUpdate(idUser, {
+			$push: {
+				likes: idProduct,
+			},
+		});
 		await prodFound.save();
 
 		return new resHandler.ApiResponse(
@@ -89,7 +95,7 @@ export async function likeProduct(req: express.Request, idUser: string) {
  * 
  * Request
  * @param userId string required "_id" field of user
- * @body prod string required "_id" field of product
+ * @query prod string required "_id" field of product
  * 
  * Response
  * @code 200 ok
@@ -97,7 +103,7 @@ export async function likeProduct(req: express.Request, idUser: string) {
  * @code 404 not found
  */
 export async function unlikeProduct(req: express.Request, idUser: string) {
-	const idProd = (req.body as any)["product"];
+	const idProd = (req.query as any)["prod"];
 
 	try {
 		const userFound = await model.UserModel.findById(idUser, {
@@ -107,20 +113,44 @@ export async function unlikeProduct(req: express.Request, idUser: string) {
 			cnt_like: true,
 		}).exec();
 
-		// if user or product not exists
+		// if user or product not found
 		if (!userFound || !prodFound) {
 			return new resHandler.ApiResponse(
 				resHandler.ApiResponse.CODE_NOT_FOUND,
 				resHandler.ApiResponse.RESULT_FAIL,
-				"not found");
+				`not found${!userFound || !prodFound ? "(" : ""}${!userFound ? "user" : ""}${!userFound || !prodFound ? "," : ""}${!prodFound ? "product" : ""}${!userFound || !prodFound ? ")" : ""}`);
 		}
 
-		const reultUpdateuser = await model.UserModel.findByIdAndUpdate(idUser,
-		{
-			$pull: {
-				"likes._id": idProd,
-			},
-		}).exec();
+		// check if user's likes list has the product
+		const resultFind = ((userFound as any)["likes"] as any[])
+		.find((value: any, idx: number, obj: any[]) => {
+			// console.log(`[api] comapring ${value.toString()} === ${idProd}: ${value.equals(idProd)}`);
+			return value.equals(idProd);
+		});
+
+		// console.log("[api] find result: ", resultFind);
+		// resultFind is undefined if likes array doesn't include the Product _id
+		if (!resultFind) {
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"user hasn't liked the product");
+		}
+
+		console.log("[api] likes: " + (userFound as any)["likes"]);
+
+		(userFound as any)["likes"].remove(idProd);
+		await userFound.save();
+		((prodFound as any)["cnt_like"] as number)--;
+		await prodFound.save();
+		// const resultUpdateuser = await model.UserModel.findByIdAndUpdate(idUser,
+		// {
+		// 	$pull: {
+		// 		likes: idProd,
+		// 	},
+		// }).exec();
+
+		// console.log("[api] result: " + resultUpdateuser);
 
 	}
 	catch (err) {

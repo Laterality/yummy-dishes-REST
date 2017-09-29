@@ -115,3 +115,11 @@ export async function duplicateCheckExample(): Promise<any> {
 		throw new Error(err);
 	}
 }
+
+export async function updateUserToAdminExample(idUser: string) {
+	return request({
+		uri: config.test.baseurl + `/user/${idUser}/adminize`,
+		method: "PUT",
+		json: true,
+	}).promise();
+}

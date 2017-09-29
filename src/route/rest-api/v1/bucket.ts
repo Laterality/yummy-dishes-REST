@@ -197,7 +197,7 @@ export async function deleteBucketItem(req: express.Request, idUser: string) {
 				const idx = ((userFound as any)["bucket"] as any[]).indexOf(p);
 				if (idx < 0) { continue; }
 				console.log(`[api] ${p["product"]} === ${idProduct}: ${p["product"] === idProduct}`);
-				if (p["product"].toString() === idProduct) {
+				if (p["product"].equals(idProduct)) {
 					((userFound as any)["bucket"] as any[]).splice(idx, 1);
 					deleted = true;
 					// console.log("[api] bucket item deleted");

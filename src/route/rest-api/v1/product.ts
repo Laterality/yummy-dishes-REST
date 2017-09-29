@@ -42,74 +42,64 @@ export async function createProduct(req: express.Request){
 	const category	= (req as any).body["category"];
 	const contents	= (req as any).body["contents"];
 	const imageIds	= (req as any).body["image_ids"];
+	console.log("[api] body: \n", req.body);
 
 	// paramter type check
-	if (typeof name		=== "string" &&
-		typeof price	=== "number" &&
-		typeof amount	=== "string" &&
-		typeof ingreds	=== "string" &&
-		typeof category	=== "string" &&
-		Array.isArray(contents) &&
-		Array.isArray(imageIds)) {
+	try{
+		const newProduct = await new model.ProductModel({
+			name,
+			price: Number(price),
+			amount,
+			ingredient: ingreds,
+			contents,
+			category,
+			images: imageIds ? imageIds : [],
+		}).save();
 
-		try{
-			const newProduct = await new model.ProductModel({
-				name,
-				price,
-				amount,
-				ingredient: ingreds,
-				contents,
-				category,
-				images: imageIds ? imageIds : [],
-			}).save();
-
-			// add created product's _id into category's "products" field
-			await model.CategoryModel.findByIdAndUpdate(category, {
-				$push: {
-					products: newProduct._id,
-				},
-			});
-
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_CREATED, 
-				resHandler.ApiResponse.RESULT_OK, "", {
-					name: "product",
-					obj: {
-						_id:		newProduct._id,
-						name:		(newProduct as any)["name"],
-						price:		(newProduct as any)["price"],
-						amount:		(newProduct as any)["amount"],
-						ingredient:	(newProduct as any)["ingredient"],
-						category:	(newProduct as any)["category"],
-						contents:	(newProduct as any)["contents"],
-						date_reg:	(newProduct as any)["date_reg"],
-						images:		(newProduct as any)["images"],
-					},
-				});
-		}
-		catch (err) {
-			console.log("[api] product creation error\n", err);
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_SERVER_FAULT, 
-				resHandler.ApiResponse.RESULT_ERROR,
-				"server fault");
-		}
-	}
-	else {
-		console.log(`[api] product creation - invalid parameters\n
-		name:		${typeof name}\n
-		price:		${typeof price}\n
-		amount:		${typeof amount}\n
-		ingredient:	${typeof ingreds}\n
-		category:	${typeof contents}\n
-		contents:	${typeof contents}\n
-		image_ids:	${typeof imageIds}`);
+		// add created product's _id into category's "products" field
+		await model.CategoryModel.findByIdAndUpdate(category, {
+			$push: {
+				products: newProduct._id,
+			},
+		});
 
 		return new resHandler.ApiResponse(
-			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
-			resHandler.ApiResponse.RESULT_FAIL, 
-			"invalid parameters");
+			resHandler.ApiResponse.CODE_CREATED, 
+			resHandler.ApiResponse.RESULT_OK, "", {
+				name: "product",
+				obj: {
+					_id:		newProduct._id,
+					name:		(newProduct as any)["name"],
+					price:		(newProduct as any)["price"],
+					amount:		(newProduct as any)["amount"],
+					ingredient:	(newProduct as any)["ingredient"],
+					category:	(newProduct as any)["category"],
+					contents:	(newProduct as any)["contents"],
+					date_reg:	(newProduct as any)["date_reg"],
+					images:		(newProduct as any)["images"],
+				},
+			});
 	}
+	catch (err) {
+		console.log("[api] product creation error\n", err);
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT, 
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
+	}
+	// console.log(`[api] product creation - invalid parameters\n
+	// name:		${typeof name}\n
+	// price:		${typeof price}\n
+	// amount:		${typeof amount}\n
+	// ingredient:	${typeof ingreds}\n
+	// category:	${typeof category}\n
+	// contents:	${typeof contents}\n
+	// image_ids:	${typeof imageIds}`);
+
+	// return new resHandler.ApiResponse(
+	// 	resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+	// 	resHandler.ApiResponse.RESULT_FAIL, 
+	// 	"invalid parameters");
 }
 /**
  * Path: /product/{productId}

@@ -4,6 +4,14 @@ export const NoticeModel = mongoose.model("Notice", new mongoose.Schema({
 	title: String,
 	category: String,
 	content: String,
+	date_reg: {
+		type: Date,
+		default: Date.now(),
+	},
+	author: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
 }));
 
 export const ImageModel = mongoose.model("Image", new mongoose.Schema({

@@ -47,7 +47,7 @@ export async function createUser(req: express.Request) {
 	const age = (req as any).body["age"];
 	const deviceId = (req as any).body["device_id"];
 
-	console.log("[api] register user", (req as any).body);
+	// console.log("[api] register user", (req as any).body);
 
 	// check if all values has been input
 	if (typeof email === "string" &&
@@ -591,6 +591,47 @@ export async function deleteUser(req: express.Request, userId: string) {
 	catch (err) {
 		console.log("[api] user deletion error,\n", err);
 		
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
+	}
+}
+
+/**
+ * Update User to admin
+ * 
+ * Path: /{userId}/adminize
+ * Method: PUT
+ * 
+ * Request
+ * @param userId 
+ * 
+ * Response
+ * @body result string required result of request
+ * @body message string optional message about result
+ */
+export async function updateUserToAdmin(req: express.Request, idUser: string) {
+	try {
+		const userFound = await model.UserModel.findById(idUser).exec();
+
+		if (!userFound) {
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_NOT_FOUND,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"not found(user)");
+		}
+
+		(userFound as any)["is_admin"] = true;
+
+		await userFound.save();
+
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_OK,
+			resHandler.ApiResponse.RESULT_OK);
+
+	} catch (err) {
+		console.log("[mongodb] error occurred while updating user\n", err);
 		return new resHandler.ApiResponse(
 			resHandler.ApiResponse.CODE_SERVER_FAULT,
 			resHandler.ApiResponse.RESULT_ERROR,

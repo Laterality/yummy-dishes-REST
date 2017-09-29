@@ -1,0 +1,11 @@
+{
+	"bucket": true,
+	"category-product": true,
+	"comment": true,
+	"coupon": true,
+	"like": true,
+	"notice": true,
+	"order": true,
+	"taste": true,
+	"user": true
+}
