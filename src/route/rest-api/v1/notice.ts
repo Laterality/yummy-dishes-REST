@@ -160,15 +160,29 @@ export async function retrieveNotice(req: express.Request, idNotice: string) {
  * @body notices NoticeModel[] retrieved notices up to 10 by the date condition
  */
 export async function retrieveNotices(req: express.Request) {
-	const dateFrom	= req.query["from"];
-	const dateTo	= req.query["to"];
+	const strDateFrom	= req.query["from"];
+	const strDateTo		= req.query["to"];
+	const dateFrom		= new Date(strDateFrom);
+	const dateTo		= new Date(strDateTo);
+
+	// console.log(`[api] date ${strDateFrom} - ${strDateTo}`);
+
+	// check if the date format is valid
+	if (dateFrom.toString() === "Invalid Date" ||
+		dateTo.toString() === "Invalid Date") {
+			return new resHandler.ApiResponse(
+				resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+				resHandler.ApiResponse.RESULT_FAIL,
+				"invalid parameter(date)");
+	}
 
 	try {
 		const objFind: any = {};
-		if (dateFrom) {
+		objFind["date_reg"] = {};
+		if (strDateFrom) {
 			objFind["date_reg"]["$gte"] = dateFrom;
 		}
-		if (dateTo) {
+		if (strDateTo) {
 			objFind["date_reg"]["$lte"] = dateTo;
 		}
 
