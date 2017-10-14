@@ -42,7 +42,7 @@ export async function createProduct(req: express.Request){
 	const category	= (req as any).body["category"];
 	const contents	= (req as any).body["contents"];
 	const imageIds	= (req as any).body["image_ids"];
-	console.log("[api] body: \n", req.body);
+	// console.log("[api] body: \n", req.body);
 
 	// paramter type check
 	try{

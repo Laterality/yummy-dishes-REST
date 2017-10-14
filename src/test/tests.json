@@ -6,6 +6,7 @@
 	"like": true,
 	"notice": true,
 	"order": true,
+	"saleinfo": true,
 	"taste": true,
 	"user": true
 }

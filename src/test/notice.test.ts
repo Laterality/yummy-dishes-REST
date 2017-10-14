@@ -50,7 +50,17 @@ describe("Test Notice API", () => {
 	});
 
 	it("2. Retrieve Notices", (done: any) => {
-		xmplNotice.retrieveNoticesExample()
+		const dateFrom = new Date();
+		dateFrom.setUTCHours(0);
+		dateFrom.setUTCMinutes(0);
+		dateFrom.setUTCSeconds(0);
+		dateFrom.setMilliseconds(0);
+		const dateTo = new Date();
+		dateTo.setUTCHours(24);
+		dateTo.setUTCMinutes(0);
+		dateTo.setUTCSeconds(0);
+		dateTo.setUTCMilliseconds(0);
+		xmplNotice.retrieveNoticesExample(dateFrom, dateTo)
 		.then((response: any) => {
 			chai.expect(response["result"]).to.equal("ok");
 			chai.expect(response["notices"]["length"]).to.equal(2);

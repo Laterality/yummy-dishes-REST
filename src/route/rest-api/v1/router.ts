@@ -13,6 +13,7 @@ import * as likeApi from "./like";
 import * as noticeApi from "./notice";
 import * as orderApi from "./order";
 import * as productApi from "./product";
+import * as saleInfoApi from "./saleinfo";
 import * as tasteApi from "./taste";
 import * as userApi from "./user";
 
@@ -558,6 +559,82 @@ async (req: express.Request, res: express.Response, next: express.NextFunction) 
 	}
 	catch (err) {
 		console.log("[api] error occurred while routing\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/saleinfo/:p1/:p2", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+	const p2 = req.params["p2"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			default: 
+				switch (p2) {
+					case "update":
+						apiRes = await saleInfoApi.updateSaleInfo(req, p1);
+						break;
+					case "delete":
+						apiRes = await saleInfoApi.deleteSaleInfo(req, p1);
+						break;
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] error occurred while routing\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/saleinfo/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			case "register":
+				apiRes = await saleInfoApi.createSaleInfo(req);
+				break;
+			case "by-date":
+				apiRes = await saleInfoApi.retrieveSaleInfoByDate(req);
+				break;
+			default:
+				if (validator.isObjectid(p1)) {
+					apiRes = await saleInfoApi.retrieveSaleInfo(req, p1);
+				}
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] error occurred while routing\n", err);
+	}
+
+	if (apiRes) { resHandler.response(res, apiRes); }
+	else { next(); }
+})
+.use("/timesale/:p1", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+	const p1 = req.params["p1"];
+
+	let apiRes: resHandler.ApiResponse | undefined;
+	apiRes = undefined;
+
+	try {
+		switch (p1) {
+			case "begin":
+				apiRes = await saleInfoApi.beginTimeSale(req);
+				break;
+		}
+	}
+	catch (err) {
+		console.log("[api] error occurred while routing");
 	}
 
 	if (apiRes) { resHandler.response(res, apiRes); }

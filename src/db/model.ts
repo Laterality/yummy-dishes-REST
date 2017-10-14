@@ -81,6 +81,7 @@ export const SaleInfoModel = mongoose.model("SaleInfo", new mongoose.Schema({
 	date_sale: {
 		type: Date,
 		default: Date.now,
+		unique: true,
 	},
 	prods_today: [{
 		type: mongoose.Schema.Types.ObjectId,
@@ -90,6 +91,9 @@ export const SaleInfoModel = mongoose.model("SaleInfo", new mongoose.Schema({
 		started: {
 			type: Boolean,
 			default: false,
+		},
+		date_started: {
+			type: Date,
 		},
 		ratio: {
 			type: Number,

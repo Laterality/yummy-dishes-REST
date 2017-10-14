@@ -26,8 +26,8 @@ export async function retrieveNoticeExample(idNotice: string) {
 
 export async function retrieveNoticesExample(dateFrom?: Date, dateTo?: Date) {
 	const qs: any = {};
-	if (dateFrom) { qs["dateFrom"] = dateFrom; }
-	if (dateTo) { qs["dateTo"] = dateTo; }
+	if (dateFrom) { qs["from"] = `${dateFrom.getUTCFullYear()}-${dateFrom.getUTCMonth() + 1 < 10 ? "0" : ""}${dateFrom.getUTCMonth() + 1}-${dateFrom.getUTCDate() < 10 ? "0" : ""}${dateFrom.getUTCDate()}`; }
+	if (dateTo) { qs["to"] = `${dateTo.getUTCFullYear()}-${dateTo.getUTCMonth() + 1 < 10 ? "0" : ""}${dateTo.getUTCMonth() + 1}-${dateTo.getUTCDate() < 10 ? "0" : ""}${dateTo.getUTCDate()}`; }
 
 	return request({
 		uri: config.test.baseurl + `/notice/notices`,

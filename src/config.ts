@@ -1,5 +1,6 @@
 export const config = {
 	port: 3003,
+	fcm_auth: "",
 	https: {
 		use: true,
 		key: "PATH_TO_PRIVATE_KEY",

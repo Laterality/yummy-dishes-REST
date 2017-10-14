@@ -44,52 +44,52 @@ export async function createUser(req: express.Request) {
 	const loginType = (req as any).body["login_type"];
 	const accessToken = (req as any).body["access_token"];
 	const phoneNumber = (req as any).body["phone_number"];
-	const age = (req as any).body["age"];
+	const age = Number((req as any).body["age"]);
 	const deviceId = (req as any).body["device_id"];
 
 	// console.log("[api] register user", (req as any).body);
 
 	// check if all values has been input
-	if (typeof email === "string" &&
-		typeof password === "string" &&
-		typeof username === "string" &&
-		typeof loginType === "string" &&
-		typeof phoneNumber === "string" &&
-		typeof age === "number" &&
-		typeof deviceId === "string") {
+	// if (typeof email === "string" &&
+	// 	typeof password === "string" &&
+	// 	typeof username === "string" &&
+	// 	typeof loginType === "string" &&
+	// 	typeof phoneNumber === "string" &&
+	// 	typeof age === "number" &&
+	// 	typeof deviceId === "string") {
 		
-		const regexNumber = new RegExp("[0-9]+$");
-		if (!regexNumber.test(phoneNumber)){
-			// if phone number has non-number character
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
-				resHandler.ApiResponse.RESULT_FAIL,
-				"invalid parameters");
-		}
+	const regexNumber = new RegExp("[0-9]+$");
+	if (!regexNumber.test(phoneNumber)){
+		// if phone number has non-number character
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"invalid parameters");
+	}
 
-		const duplRes = await model.UserModel.findOne({
-			$or: [
-				{email},
-				{username},
-			],
-		}).exec();
-		
-		console.log("duplRes: ", duplRes);
-		
-		if (duplRes) {
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_CONFLICT,
-				resHandler.ApiResponse.RESULT_FAIL,
-				"email or username duplicates");
-		}
+	const duplRes = await model.UserModel.findOne({
+		$or: [
+			{email},
+			{username},
+		],
+	}).exec();
+	
+	console.log("duplRes: ", duplRes);
+	
+	if (duplRes) {
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_CONFLICT,
+			resHandler.ApiResponse.RESULT_FAIL,
+			"email or username duplicates");
+	}
 
-		const nativeLogin = loginType === "native";
+	const nativeLogin = loginType === "native";
 
-		// encrypt password
-		const authInfo = nativeLogin ? await auth.encryption(password) :
-		["", ""];
+	// encrypt password
+	const authInfo = nativeLogin ? await auth.encryption(password) :
+	["", ""];
 
-		const newUser = new model.UserModel({
+	const newUser = new model.UserModel({
 		email,
 		password: nativeLogin ? authInfo[0] : "",
 		salt: nativeLogin ? authInfo[1] : "",
@@ -99,49 +99,49 @@ export async function createUser(req: express.Request) {
 		phone_number: phoneNumber,
 		age,
 		device_id: deviceId,
-		});
+	});
 		
-		try{
-			const execUser = await newUser.save();
-			console.log("[mongodb] new User saved");
+	try{
+		const execUser = await newUser.save();
+		console.log("[mongodb] new User saved");
 
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_CREATED,
-				resHandler.ApiResponse.RESULT_OK,
-				"",
-				{
-					name: "user",
-					obj: {
-						_id: (execUser as any)["_id"],
-						email: (execUser as any)["eamil"],
-						username: (execUser as any)["username"],
-						login_type: (execUser as any)["login_type"],
-						phone_number: (execUser as any)["phone_number"],
-					},
-				});
-		}
-		catch (err){
-			console.log("[mongodb] user saving error", err);
-			return new resHandler.ApiResponse(
-				resHandler.ApiResponse.CODE_SERVER_FAULT,
-				resHandler.ApiResponse.RESULT_ERROR,
-				"server fault");
-		}
-	}
-	else {
-		console.log("[api] invalid parameters", `
-		tyypeof email: ${typeof email},\n
-		typeof password: ${typeof password},\n
-		typeof username: ${typeof username},\n
-		typeof login_type: ${typeof loginType},\n
-		typeof phone_number: ${typeof phoneNumber},\n
-		typeof age: ${typeof age}}
-		typeof device_id: ${typeof deviceId}`);
 		return new resHandler.ApiResponse(
-			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
-			resHandler.ApiResponse.RESULT_FAIL,
-			"invalid parameters");
+			resHandler.ApiResponse.CODE_CREATED,
+			resHandler.ApiResponse.RESULT_OK,
+			"",
+			{
+				name: "user",
+				obj: {
+					_id: (execUser as any)["_id"],
+					email: (execUser as any)["eamil"],
+					username: (execUser as any)["username"],
+					login_type: (execUser as any)["login_type"],
+					phone_number: (execUser as any)["phone_number"],
+				},
+			});
 	}
+	catch (err){
+		console.log("[mongodb] user saving error", err);
+		return new resHandler.ApiResponse(
+			resHandler.ApiResponse.CODE_SERVER_FAULT,
+			resHandler.ApiResponse.RESULT_ERROR,
+			"server fault");
+	}
+	// }
+	// else {
+	// 	console.log("[api] invalid parameters", `
+	// 	typeof email: ${typeof email},\n
+	// 	typeof password: ${typeof password},\n
+	// 	typeof username: ${typeof username},\n
+	// 	typeof login_type: ${typeof loginType},\n
+	// 	typeof phone_number: ${typeof phoneNumber},\n
+	// 	typeof age: ${typeof age}
+	// 	typeof device_id: ${typeof deviceId}`);
+	// 	return new resHandler.ApiResponse(
+	// 		resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+	// 		resHandler.ApiResponse.RESULT_FAIL,
+	// 		"invalid parameters");
+	// }
 }
 
 /**
