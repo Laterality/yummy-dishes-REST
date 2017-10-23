@@ -91,12 +91,14 @@ export async function createUser(req: express.Request) {
 
 	const newUser = new model.UserModel({
 		email,
+		is_admin: false,
 		password: nativeLogin ? authInfo[0] : "",
 		salt: nativeLogin ? authInfo[1] : "",
 		username,
 		login_type: loginType,
 		access_token: nativeLogin ? "" : accessToken,
 		phone_number: phoneNumber,
+		date_reg: Date.now(),
 		age,
 		device_id: deviceId,
 	});

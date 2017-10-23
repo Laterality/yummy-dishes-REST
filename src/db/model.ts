@@ -248,7 +248,7 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 	},
 	date_reg: {
 		type: Date,
-		defaulat: Date.now,
+		defaulat: Date.now(),
 	},
 	age: {
 		type: Number,
