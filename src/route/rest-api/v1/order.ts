@@ -30,7 +30,7 @@ import * as validator from "../../../lib/validator";
 export async function createOrder(req: express.Request) {
 	const dateToReceive = req.body["date_to_receive"];
 	const idOrderer = req.body["orderer"];
-	const products = req.body["products"];
+	// const products = req.body["products"];
 	const phoneNumber = req.body["phone_number"];
 	const additional = req.body["additional"];
 
@@ -59,7 +59,8 @@ export async function createOrder(req: express.Request) {
 			date_ordered: Date.now(),
 			date_to_receive: new Date(dateToReceive),
 			orderer: idOrderer,
-			products,
+			// products,
+			bucket,
 			phone_number: phoneNumber ? 
 			phoneNumber : 
 			(userOrdered as any)["phone_number"],
