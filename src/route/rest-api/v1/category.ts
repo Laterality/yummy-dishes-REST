@@ -124,7 +124,7 @@ export async function retrieveProductsByCategory(req: express.Request, categoryI
 
 	const queries = q ? (q as string).split(",") : [];
 
-	let strSelection = "_id name";
+	let strSelection = "_id name price";
 
 	for (const i in queries) {
 		if (i) {

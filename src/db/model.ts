@@ -294,6 +294,10 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Product",
 	}],
+	classes_prefer: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "ProductClass",
+	}],
 	comments: [{
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Comment",
@@ -309,5 +313,12 @@ export const UserModel = mongoose.model("User", new mongoose.Schema({
 	cnt_stamp: {
 		type: Number,
 		default: 0,
+	},
+}));
+
+export const ProductClassModel = mongoose.model("ProductClass", new mongoose.Schema({
+	name: {
+		type: String,
+		unique: true,
 	},
 }));

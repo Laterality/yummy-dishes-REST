@@ -258,7 +258,7 @@ export async function loginUser(req: express.Request) {
  * @query q string optional keys to query separte by comma "email", "username" is default
  * ["login_type", "phone_number", "date_reg", "age",
  * "accept_push", "accept_privacy", "bucket", "tastes", "likes", "comments", 
- * "coupons", "cnt_reviewable", "cnt_stamp"]
+ * "coupons", "cnt_reviewable", "cnt_stamp", "classes_prefer"]
  * 
  * Response
  * @code 200 request succeed
@@ -276,18 +276,45 @@ export async function retrieveUser(req: express.Request, userId: string) {
 	const q		= (req as any).query["q"];
 
 	const queries: string[] = q ? q.split(",") : [];
+	const objProjection: any = {
+		_id: true,
+		email: true,
+		username: true,
+		login_type: queries.indexOf("login_type") > -1,
+		phone_number: queries.indexOf("phone_number") > -1,
+		date_reg: queries.indexOf("date_reg") > -1,
+		age: queries.indexOf("age") > -1,
+		accept_push: queries.indexOf("accept_push") > -1,
+		accept_privacy: queries.indexOf("accept_privacy") > -1,
+		cnt_reviewable: queries.indexOf("cnt_reviewable") > -1,
+		cnt_stamp: queries.indexOf("cnt_stamp") > -1,
+		classes_prefer: queries.indexOf("classes_prefer") > -1,
+		likes: queries.indexOf("likes") > -1,
+		comments: queries.indexOf("comments") > -1,
+		coupons: queries.indexOf("coupons") > -1,
+		bucket: queries.indexOf("bucket") > -1,
+		tastes: queries.indexOf("tastes") > -1,
+	};
+
+	for (const i in objProjection) {
+		if (!objProjection[i]) {
+			delete objProjection[i];
+		}
+	}
 	
 	let query = model.UserModel.findById(id);
 	
 	// if query exists, handle it
 	if (queries.length !== 0){
-		query = queries.indexOf("likes") > -1 ? query : query.populate("likes", "name rate_avg cnt_like");
-		query = queries.indexOf("comments") > -1 ? query : query.populate("comments", "content rate")
-		.populate("comments product", "name")
-		.populate("comments tastes", "text");
-		query = queries.indexOf("coupons") > -1 ? query : query.populate("coupons");
-		query = queries.indexOf("bucket") > -1 ? query : query.populate("bucket.product");
-		query = queries.indexOf("tastes") > -1 ? query : query.populate("tastes");
+		if (objProjection["likes"]) { query = query.populate("likes", "name rate_avg cnt_like"); }
+		if (objProjection["comments"]) {
+			query = query.populate("comments", "content rate")
+			.populate("comments product", "name")
+			.populate("comments tastes", "text");
+		}
+		if (objProjection["coupons"]) { query = query.populate("coupons"); }
+		if (objProjection["bucket"]) { query = query.populate("bucket.product"); }
+		if (objProjection["tastes"]) { query = query.populate("tastes"); }
 	}
 
 	try{
@@ -298,54 +325,54 @@ export async function retrieveUser(req: express.Request, userId: string) {
 			const user = result as any;
 
 			// default result
-			const queryResult: any = {
-				_id: user["_id"],
-				email: user["email"],
-				username: user["username"],
-			};
+			// const queryResult: any = {
+			// 	_id: user["_id"],
+			// 	email: user["email"],
+			// 	username: user["username"],
+			// };
 
 			// optional results
-			if (queries.indexOf("login_type") > -1) {
-				queryResult["login_type"] = user["login_type"];
-			}
-			if (queries.indexOf("phone_number") > -1) {
-				queryResult["phone_number"] = user["phone_number"];
-			}
-			if (queries.indexOf("date_reg") > -1 ) {
-				queryResult["date_reg"] = user["date_reg"];
-			}
-			if (queries.indexOf("age") > -1) {
-				queryResult["age"] = user["age"];
-			}
-			if (queries.indexOf("accept_push") > -1) {
-				queryResult["accept_push"] = user["accept_push"];
-			}
-			if (queries.indexOf("accept_privacy") > -1) {
-				queryResult["accept_privacy"] = user["accept_privacy"];
-			}
-			if (queries.indexOf("cnt_reviewable") > - 1) {
-				queryResult["cnt_reviewable"] = user["cnt_reviewable"];
-			}
-			if (queries.indexOf("cnt_stamp") > - 1) {
-				queryResult["cnt_stamp"] = user["cnt_stamp"];
-			}
+			// if (objProjection["login_type"]) {
+			// 	queryResult["login_type"] = user["login_type"];
+			// }
+			// if (objProjection["phone_number"]) {
+			// 	queryResult["phone_number"] = user["phone_number"];
+			// }
+			// if (objProjection["date_reg"]) {
+			// 	queryResult["date_reg"] = user["date_reg"];
+			// }
+			// if (objProjection["age"]) {
+			// 	queryResult["age"] = user["age"];
+			// }
+			// if (objProjection["accept_push"]) {
+			// 	queryResult["accept_push"] = user["accept_push"];
+			// }
+			// if (objProjection["accept_privacy"]) {
+			// 	queryResult["accept_privacy"] = user["accept_privacy"];
+			// }
+			// if (objProjection["cnt_reviewable"]) {
+			// 	queryResult["cnt_reviewable"] = user["cnt_reviewable"];
+			// }
+			// if (objProjection["cnt_stamp"]) {
+			// 	queryResult["cnt_stamp"] = user["cnt_stamp"];
+			// }
 
-			// populated things
-			if (queries.indexOf("likes") > -1) {
-				queryResult["likes"] = user["likes"];
-			}
-			if (queries.indexOf("comments") > -1) {
-				queryResult["comments"] = user["comments"];
-			}
-			if (queries.indexOf("coupons") > -1) {
-				queryResult["coupons"] = user["couponse"];
-			}
-			if (queries.indexOf("bucket") > -1) {
-				queryResult["bucket"] = user["bucket"];
-			}
-			if (queries.indexOf("tastes") > -1) {
-				queryResult["tastes"] = user["tastes"];
-			}
+			// // populated things
+			// if (objProjection["likes"]) {
+			// 	queryResult["likes"] = user["likes"];
+			// }
+			// if (objProjection["comments"]) {
+			// 	queryResult["comments"] = user["comments"];
+			// }
+			// if (objProjection["coupons"]) {
+			// 	queryResult["coupons"] = user["coupons"];
+			// }
+			// if (objProjection["bucket"]) {
+			// 	queryResult["bucket"] = user["bucket"];
+			// }
+			// if (queries.indexOf("tastes") > -1) {
+			// 	queryResult["tastes"] = user["tastes"];
+			// }
 
 			return new resHandler.ApiResponse(
 				resHandler.ApiResponse.CODE_OK,
@@ -353,7 +380,7 @@ export async function retrieveUser(req: express.Request, userId: string) {
 				"",
 				{
 					name: "user",
-					obj: queryResult,
+					obj: result, // queryResult,
 				});
 		}
 		else{
@@ -389,6 +416,8 @@ export async function retrieveUser(req: express.Request, userId: string) {
  * @body username string optional username to update
  * @body device_id string optional device id to update
  * @body cnt_stamp number optional count of stamp
+ * @body tastes string[] user's tastes
+ * @body classes_prefer string[] product classes user prefers
  * 
  * Response
  * @code 200 updated successfully
@@ -406,6 +435,8 @@ export async function updateUser(req: express.Request, userId: string) {
 	const deviceId		= (req as any).body["device_id"];
 	const cntStamp		= (req as any).body["cnt_stamp"];
 	const acceptPush	= (req as any).body["accept_push"];
+	const tastes		= (req as any).body["tastes"];
+	const prefCls		= (req as any).body["classes_prefer"];
 
 	const email = dirtyEmail ? (dirtyEmail as string).toLowerCase() : undefined;
 	
@@ -445,9 +476,11 @@ export async function updateUser(req: express.Request, userId: string) {
 		}
 
 		const update: any = {};
-		if (email) { update["email"] = email; }
-		if (username) { update["username"] = username; }
-		if (deviceId) { update["deviceid"] = deviceId; }
+		if (email && email.length >= 0) { update["email"] = email; }
+		if (username && username.length >= 0) { update["username"] = username; }
+		if (deviceId && deviceId.length >= 0) { update["deviceid"] = deviceId; }
+		if (Array.isArray(tastes) && tastes.length >= 0) { update["tastes"] = tastes; }
+		if (Array.isArray(prefCls) && prefCls.length >= 0) { update["classes_prefer"] = prefCls; }
 		if (cntStamp) { update["cnt_stamp"] = cntStamp; }
 		if (acceptPush) {
 			update["accept_push"]["accepted"] = acceptPush["accepted"]; 

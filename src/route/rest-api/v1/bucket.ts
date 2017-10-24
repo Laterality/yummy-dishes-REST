@@ -27,13 +27,13 @@ export async function addBucketItem(req: express.Request, idUser: string) {
 	const idProduct	= (req.body as any)["product"];
 	const qty		= (req.body as any)["quantity"] ? (req.body as any)["quantity"] : 1;
 
-	if (typeof qty !== "number" ||
-		qty			<= 0) {
-		return new resHandler.ApiResponse(
-			resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
-			resHandler.ApiResponse.RESULT_FAIL,
-			"invalid paramters");
-	}
+	// if (typeof qty !== "number" ||
+	// 	qty			<= 0) {
+	// 	return new resHandler.ApiResponse(
+	// 		resHandler.ApiResponse.CODE_INVALID_PARAMETERS,
+	// 		resHandler.ApiResponse.RESULT_FAIL,
+	// 		"invalid paramters");
+	// }
 
 	try {
 		const userFound = await model.UserModel.findById(idUser, {
