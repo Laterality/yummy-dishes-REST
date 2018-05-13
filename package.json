@@ -13,7 +13,7 @@
     "url": "git+https://github.com/Laterality/yummy-dishes-REST.git"
   },
   "author": "Latera",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Laterality/yummy-dishes-REST/issues"
   },
